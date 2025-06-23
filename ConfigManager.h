@@ -17,8 +17,8 @@ class ConfigManager : public QObject
     quint16 port() const { return m_port; }
     QByteArray passHash() const { return m_passHash; }
 
-    void beginSecChange();
-    void endSecChange();
+    void beginSeqChange();
+    void endSeqChange();
     bool setIfaceName(const QString& name);
     bool setBcastAddr(const QHostAddress& addr);
     bool setPort(quint16 port);

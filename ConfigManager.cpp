@@ -22,13 +22,13 @@ ConfigManager::~ConfigManager()
     settings.setValue("pass",      m_passHash);
 }
 
-void ConfigManager::beginSecChange()
+void ConfigManager::beginSeqChange()
 {
     changed = false;
     seqChanging = true;
 }
 
-void ConfigManager::endSecChange()
+void ConfigManager::endSeqChange()
 {
     seqChanging = false;
     if(changed)

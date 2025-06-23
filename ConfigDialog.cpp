@@ -111,12 +111,12 @@ TODO
             return;
         }
 
-        confMgr.beginSecChange();
+        confMgr.beginSeqChange();
           confMgr.setIfaceName(selectedIfaceName);
           confMgr.setBcastAddr(QHostAddress(dstAddrEdit.text()));
           confMgr.setPort(portSb.value());
           confMgr.setPass(passEdit.text(), portSb.value()); // The port number serves as the salt for the pass hash
-        confMgr.endSecChange();
+        confMgr.endSeqChange();
 
         accept();
     });
