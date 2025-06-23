@@ -1,4 +1,5 @@
 #include "DatagramProcessor.h"
+#include "CryptoEngine.h"
 #include <QNetworkInterface>
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -18,19 +19,22 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
     {
         while(socketRx.hasPendingDatagrams())
         {
-            QByteArray datagram;
-            datagram.resize(static_cast<int>(socketRx.pendingDatagramSize()));
+            QByteArray data;
+            data.resize(static_cast<int>(socketRx.pendingDatagramSize()));
             QHostAddress sender;
             quint16 senderPort;
-            socketRx.readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
-            emit datagramReceived(datagram, sender, senderPort);
+            socketRx.readDatagram(data.data(), data.size(), &sender, &senderPort);
+            if(CryptoEngine::decrypt(data, m_confMgr.passHash()))
+                emit datagramReceived(data, sender, senderPort);
         }
     });
 }
 
 bool DatagramProcessor::sendDatagram(const QByteArray& data)
 {
-    qint64 sent = socketTx.writeDatagram(data, m_confMgr.bcastAddr(), m_confMgr.port());
-    return sent == data.size();
+    QByteArray cypher = data;
+    CryptoEngine::encrypt(cypher, m_confMgr.passHash());
+    qint64 sent = socketTx.writeDatagram(cypher, m_confMgr.bcastAddr(), m_confMgr.port());
+    return sent == cypher.size();
 }
 

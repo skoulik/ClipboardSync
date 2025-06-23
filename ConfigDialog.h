@@ -17,6 +17,7 @@ class ConfigDialog : public QDialog
     QMenu ifaceMenu            { this };
     QLineEdit dstAddrEdit      { this };
     QSpinBox portSb            { this };
+    QLineEdit passEdit         { this };
     QDialogButtonBox buttonBox { QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this };
     QString selectedIfaceName;
 

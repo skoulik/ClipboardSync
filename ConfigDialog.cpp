@@ -98,20 +98,37 @@ TODO
     });
 
     QObject::connect(&buttonBox, &QDialogButtonBox::accepted, this, [this, &confMgr]
-    {
+    {        
+        if(dstAddrEdit.text().isEmpty())
+        {
+            dstAddrEdit.setFocus();
+            return;
+        }
+
+        if(passEdit.text().isEmpty())
+        {
+            passEdit.setFocus();
+            return;
+        }
+
         confMgr.beginSecChange();
           confMgr.setIfaceName(selectedIfaceName);
           confMgr.setBcastAddr(QHostAddress(dstAddrEdit.text()));
           confMgr.setPort(portSb.value());
+          confMgr.setPass(passEdit.text(), portSb.value()); // The port number serves as the salt for the pass hash
         confMgr.endSecChange();
+
         accept();
     });
     QObject::connect(&buttonBox, &QDialogButtonBox::rejected, this, &ConfigDialog::reject);
+
+    passEdit.setEchoMode(QLineEdit::Password);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Interface", &ifaceBtn);
     formLayout->addRow("Broadcast address", &dstAddrEdit);
     formLayout->addRow("Port", &portSb);
+    formLayout->addRow("Password", &passEdit);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(formLayout);

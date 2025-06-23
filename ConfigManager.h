@@ -15,12 +15,14 @@ class ConfigManager : public QObject
     const QString& ifaceName() const { return m_ifaceName; }
     const QHostAddress& bcastAddr() const { return m_bcastAddr; }
     quint16 port() const { return m_port; }
+    QByteArray passHash() const { return m_passHash; }
 
     void beginSecChange();
     void endSecChange();
     bool setIfaceName(const QString& name);
     bool setBcastAddr(const QHostAddress& addr);
     bool setPort(quint16 port);
+    bool setPass(const QString& pass, quint16 salt);
 
   signals:
     void configChanged();
@@ -29,6 +31,7 @@ class ConfigManager : public QObject
     QString m_ifaceName;
     QHostAddress m_bcastAddr { "255.255.255.255" };
     quint16 m_port           { 19211 };
+    QByteArray m_passHash;
     bool seqChanging         { false };
     bool changed             { false };
 

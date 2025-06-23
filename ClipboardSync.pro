@@ -2,19 +2,23 @@ TEMPLATE = app
 TARGET = ClipboardSync
 CONFIG += c++17 
 QT += core gui widgets network
+DEFINES += AES256=1 ECB=0 CTR=0
 
 HEADERS += \
+    ClipboardManager.h \
     ConfigDialog.h \
     ConfigManager.h \
-    ClipboardManager.h \
+    CryptoEngine.h \
     DatagramProcessor.h
 
 SOURCES += \
     main.cpp \
+    ClipboardManager.cpp \
     ConfigDialog.cpp \
     ConfigManager.cpp \
-    ClipboardManager.cpp \
-    DatagramProcessor.cpp
+    CryptoEngine.cpp \
+    DatagramProcessor.cpp\
+    thirdparty\tiny-AES-c\aes.c
 
 RESOURCES += resources.qrc
 
