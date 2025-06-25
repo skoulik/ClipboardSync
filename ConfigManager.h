@@ -9,18 +9,27 @@ class ConfigManager : public QObject
 {
     Q_OBJECT
   public:
+    enum class Mode
+    {
+        Broadcast,
+        Multicast,
+        Unicast
+    };
+
     ConfigManager(QObject* parent = nullptr);
     ~ConfigManager();
 
     const QString& ifaceName() const { return m_ifaceName; }
-    const QHostAddress& bcastAddr() const { return m_bcastAddr; }
+    Mode mode() const { return m_mode; }
+    const QHostAddress& addr() const { return m_addr; }
     quint16 port() const { return m_port; }
     QByteArray passHash() const { return m_passHash; }
 
     void beginSeqChange();
     void endSeqChange();
     bool setIfaceName(const QString& name);
-    bool setBcastAddr(const QHostAddress& addr);
+    bool setMode(Mode mode);
+    bool setAddr(const QHostAddress& addr);
     bool setPort(quint16 port);
     bool setPass(const QString& pass, quint16 salt);
 
@@ -29,7 +38,8 @@ class ConfigManager : public QObject
 
   private:
     QString m_ifaceName;
-    QHostAddress m_bcastAddr { "255.255.255.255" };
+    Mode m_mode              { Mode::Broadcast };
+    QHostAddress m_addr      { "255.255.255.255" };
     quint16 m_port           { 19211 };
     QByteArray m_passHash;
     bool seqChanging         { false };

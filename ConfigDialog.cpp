@@ -3,7 +3,6 @@
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QHostAddress>
-#include <QNetworkInterface>
 #include <QActionGroup>
 #include <QMetaType>
 #include <QCoreApplication>
@@ -18,88 +17,100 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
     ifaceBtn.setPopupMode(QToolButton::InstantPopup);
     ifaceBtn.setMenu(&ifaceMenu);
 
-    selectedIfaceName = confMgr.ifaceName();
-    QNetworkInterface selectedIface = QNetworkInterface::interfaceFromName(selectedIfaceName);
+    selectedIface = QNetworkInterface::interfaceFromName(confMgr.ifaceName());
     if(selectedIface.isValid())
         ifaceBtn.setText(selectedIface.humanReadableName());
 
-    dstAddrEdit.setText(confMgr.bcastAddr().toString());
+    auto getIfaceAddr = [](QNetworkInterface& iface, ConfigManager::Mode mode) -> QHostAddress
+    {
+        switch(mode)
+        {
+            case ConfigManager::Mode::Broadcast:
+            {
+                for(const QNetworkAddressEntry &entry : iface.addressEntries())
+                {
+                    if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol && !entry.broadcast().isNull())
+                        return entry.broadcast();
+                }
+            }
+            break;
+
+            case ConfigManager::Mode::Multicast:
+            {
+                if(!iface.flags().testFlag(QNetworkInterface::CanMulticast))
+                    return {};
+                return QHostAddress("239.255.1.1");
+            }
+            break;
+
+            case ConfigManager::Mode::Unicast:
+            {
+                QHostAddress v4, v6;
+                for(const QNetworkAddressEntry &entry : iface.addressEntries())
+                {
+                    if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
+                    {
+                        if(v4.isNull()) v4 = entry.ip();
+                    }
+                    else if(entry.ip().protocol() == QAbstractSocket::IPv6Protocol)
+                    {
+                        if(v6.isNull()) v6 = entry.ip();
+                    }
+                }
+                return !v4.isNull() ? v4 : v6;
+            }
+            break;
+        }
+
+        return QHostAddress("255.255.255.255");
+    };
+
+    modeCb.addItems({"Broadcast", "Multicast", "Unicast"});
+    modeCb.setCurrentIndex(int(confMgr.mode()));
+
+    QObject::connect(&modeCb, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, &getIfaceAddr](int idx)
+    {
+        dstAddrEdit.setText(getIfaceAddr(selectedIface, ConfigManager::Mode(idx)).toString());
+    });
+
+    dstAddrEdit.setText(confMgr.addr().toString());
 
     portSb.setRange(0, 65535);
     portSb.setValue(confMgr.port());
 
     QObject::connect(&ifaceMenu, &QMenu::aboutToShow, this, [this]()
     {
-#if 0  
-TODO
-          for(const auto & iface : QNetworkInterface::allInterfaces())
-          {
-              auto type = iface.type();
-        
-              if(/*type != QNetworkInterface::Unknown && type != QNetworkInterface::Ethernet &&*/
-                 type != QNetworkInterface::Wifi)
-                 continue;
-        
-              auto flags = iface.flags();
-              if(flags.testFlag(QNetworkInterface::IsLoopBack) || flags.testFlag(QNetworkInterface::IsPointToPoint))
-                  continue;
-              if(!flags.testFlag(QNetworkInterface::IsUp) || !flags.testFlag(QNetworkInterface::IsRunning) ||
-                 !flags.testFlag(QNetworkInterface::CanMulticast))
-                  continue;
-          
-              bool isIp4 = false;
-              for(const auto &curAddr : iface.addressEntries())
-              {
-                  QHostAddress    hostAddr(curAddr.ip());
-                  bool            linkLocalB(hostAddr.isLinkLocal());
-                  bool            nullB(hostAddr.isNull());
-              
-                  if(!nullB && !linkLocalB && hostAddr.protocol() == QAbstractSocket::IPv4Protocol)
-                  {
-                      isIp4 = true;
-                      break;
-                  }
-              }
-              if(!isIp4)
-                  continue;
-        
-              qWarning() << iface.name() << " " << iface.humanReadableName() << " " << iface.hardwareAddress();
-        
-              socketTx.setMulticastInterface(iface);
-          }
-#endif
-
         ifaceMenu.clear();
         for(const QNetworkInterface &iface : QNetworkInterface::allInterfaces())
         {
-            QHostAddress bcast;
-            for(const QNetworkAddressEntry &entry : iface.addressEntries())
-            {
-                if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol && !entry.broadcast().isNull())
-                {
-                    bcast = entry.broadcast();
-                    break;
-                }
-            }
+            auto type = iface.type();
+            if(type != QNetworkInterface::Unknown && type != QNetworkInterface::Ethernet &&
+               type != QNetworkInterface::Wifi)
+               continue;
+      
+            auto flags = iface.flags();
+            if(flags.testFlag(QNetworkInterface::IsLoopBack))
+                continue;
+            if(!flags.testFlag(QNetworkInterface::IsUp) || !flags.testFlag(QNetworkInterface::IsRunning))
+                continue;
+
             QAction* action = ifaceMenu.addAction(iface.humanReadableName());
             action->setCheckable(true);
-            action->setChecked(iface.name() == selectedIfaceName);
-            action->setData(QList<QVariant>{ QVariant::fromValue<QHostAddress>(bcast), iface.name() });
+            action->setChecked(iface.name() == selectedIface.name());
+            action->setData(QVariant::fromValue<QNetworkInterface>(iface));
         }
     });
 
-    QObject::connect(&ifaceMenu, &QMenu::triggered, this, [this](QAction *action)
+    QObject::connect(&ifaceMenu, &QMenu::triggered, this, [this, &getIfaceAddr](QAction *action)
     {
-        auto data = action->data().value<QList<QVariant>>();
-        QHostAddress bcast = data[0].value<QHostAddress>();
-        selectedIfaceName = data[1].toString();
-        dstAddrEdit.setText(bcast.isNull() ? "255.255.255.255" : bcast.toString());
+        selectedIface = action->data().value<QNetworkInterface>();
+        dstAddrEdit.setText(getIfaceAddr(selectedIface, ConfigManager::Mode(modeCb.currentIndex())).toString());
         ifaceBtn.setText(action->text());
     });
 
     QObject::connect(&buttonBox, &QDialogButtonBox::accepted, this, [this, &confMgr]
     {        
-        if(dstAddrEdit.text().isEmpty())
+        if(dstAddrEdit.text().isEmpty()) // TODO: validator
         {
             dstAddrEdit.setFocus();
             return;
@@ -112,8 +123,9 @@ TODO
         }
 
         confMgr.beginSeqChange();
-          confMgr.setIfaceName(selectedIfaceName);
-          confMgr.setBcastAddr(QHostAddress(dstAddrEdit.text()));
+          confMgr.setIfaceName(selectedIface.name());
+          confMgr.setMode(ConfigManager::Mode(modeCb.currentIndex()));
+          confMgr.setAddr(QHostAddress(dstAddrEdit.text()));
           confMgr.setPort(portSb.value());
           confMgr.setPass(passEdit.text(), portSb.value()); // The port number serves as the salt for the pass hash
         confMgr.endSeqChange();
@@ -125,8 +137,9 @@ TODO
     passEdit.setEchoMode(QLineEdit::Password);
 
     QFormLayout *formLayout = new QFormLayout;
-    formLayout->addRow("Interface", &ifaceBtn);
-    formLayout->addRow("Broadcast address", &dstAddrEdit);
+    formLayout->addRow("Network Interface", &ifaceBtn);
+    formLayout->addRow("Operating Mode", &modeCb);
+    formLayout->addRow("Destination Address", &dstAddrEdit);
     formLayout->addRow("Port", &portSb);
     formLayout->addRow("Password", &passEdit);
 

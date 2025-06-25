@@ -8,6 +8,9 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QDialogButtonBox>
+#include <QComboBox>
+#include <QNetworkInterface>
+
 
 class ConfigDialog : public QDialog
 {
@@ -15,11 +18,12 @@ class ConfigDialog : public QDialog
   private:
     QToolButton ifaceBtn       { this };
     QMenu ifaceMenu            { this };
+    QComboBox modeCb           { this };
     QLineEdit dstAddrEdit      { this };
     QSpinBox portSb            { this };
     QLineEdit passEdit         { this };
     QDialogButtonBox buttonBox { QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this };
-    QString selectedIfaceName;
+    QNetworkInterface selectedIface;
 
   public:
     ConfigDialog(ConfigManager& confMgr, QWidget *parent = nullptr);

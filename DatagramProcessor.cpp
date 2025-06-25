@@ -11,8 +11,43 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
     QObject::connect(&confMgr, &ConfigManager::configChanged, this, [this]
     {
         socketRx.close();
-        if(!socketRx.bind(QHostAddress::Any, m_confMgr.port(), QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint))
-            QMessageBox::critical(nullptr, QCoreApplication::applicationName(), "Failed to bind UDP Rx socket.");   
+        switch(m_confMgr.mode())
+        {
+            case ConfigManager::Mode::Broadcast:
+            case ConfigManager::Mode::Unicast:
+            {
+                if(!socketRx.bind(QHostAddress::Any, m_confMgr.port(), QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint))
+                    QMessageBox::critical(nullptr, QCoreApplication::applicationName(), "Failed to bind UDP Rx socket.");   
+            }
+            break;
+
+            case ConfigManager::Mode::Multicast:
+            {
+                QNetworkInterface iface = QNetworkInterface::interfaceFromName(m_confMgr.ifaceName());
+                if(!iface.isValid())
+                {
+                    QMessageBox::critical(nullptr, QCoreApplication::applicationName(), "Invalid network interface selected.");
+                    break;
+                }
+
+                QHostAddress group = m_confMgr.addr();
+                QHostAddress bindAddr = group.protocol() == QAbstractSocket::IPv4Protocol ? QHostAddress::AnyIPv4 : QHostAddress::AnyIPv6;
+                if(!socketRx.bind(bindAddr, m_confMgr.port(), QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint))
+                    QMessageBox::critical(nullptr, QCoreApplication::applicationName(), "Failed to bind UDP Rx socket.");
+
+                if(!socketRx.joinMulticastGroup(group, iface))
+                    QMessageBox::critical(nullptr, QCoreApplication::applicationName(), "Failed to join multicast group.");
+
+                socketRx.setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
+
+                socketTx.close();
+                if(!socketTx.bind(bindAddr, 0))
+                    QMessageBox::critical(nullptr, QCoreApplication::applicationName(), "Failed to bind UDP Tx socket.");
+                socketTx.setMulticastInterface(iface);
+                socketTx.setSocketOption(QAbstractSocket::MulticastTtlOption, 3);
+            }
+            break;
+        }
     });
 
     QObject::connect(&socketRx, &QUdpSocket::readyRead, this, [this]
@@ -34,7 +69,7 @@ bool DatagramProcessor::sendDatagram(const QByteArray& data)
 {
     QByteArray cypher = data;
     CryptoEngine::encrypt(cypher, m_confMgr.passHash());
-    qint64 sent = socketTx.writeDatagram(cypher, m_confMgr.bcastAddr(), m_confMgr.port());
+    qint64 sent = socketTx.writeDatagram(cypher, m_confMgr.addr(), m_confMgr.port());
     return sent == cypher.size();
 }
 
