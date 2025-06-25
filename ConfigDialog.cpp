@@ -110,7 +110,11 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
 
     QObject::connect(&buttonBox, &QDialogButtonBox::accepted, this, [this, &confMgr]
     {        
-        if(dstAddrEdit.text().isEmpty()) // TODO: validator
+        auto addr = QHostAddress(dstAddrEdit.text());
+        auto mode = ConfigManager::Mode(modeCb.currentIndex());
+        if(addr.isNull() ||
+           mode == ConfigManager::Mode::Broadcast && addr.protocol() != QAbstractSocket::IPv4Protocol ||
+           mode == ConfigManager::Mode::Multicast && !addr.isMulticast())
         {
             dstAddrEdit.setFocus();
             return;
@@ -124,7 +128,7 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
 
         confMgr.beginSeqChange();
           confMgr.setIfaceName(selectedIface.name());
-          confMgr.setMode(ConfigManager::Mode(modeCb.currentIndex()));
+          confMgr.setMode(mode);
           confMgr.setAddr(QHostAddress(dstAddrEdit.text()));
           confMgr.setPort(portSb.value());
           confMgr.setPass(passEdit.text(), portSb.value()); // The port number serves as the salt for the pass hash
