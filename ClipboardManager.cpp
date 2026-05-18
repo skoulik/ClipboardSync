@@ -8,9 +8,9 @@ ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent)
     lastDataHash = mimeData->hasFormat("text/plain") ? qHash(mimeData->data("text/plain")) : 0;
 
   #ifdef Q_OS_MAC
-    QObject::connect(&pollTimer, &QTimer::timeout, this,
+    connect(&pollTimer, &QTimer::timeout, this,
   #else
-    QObject::connect(clipboard, &QClipboard::dataChanged, this,
+    connect(clipboard, &QClipboard::dataChanged, this,
   #endif
         [this]
         {

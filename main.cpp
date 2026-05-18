@@ -18,6 +18,12 @@ int main(int argc, char *argv[])
     app.setQuitOnLastWindowClosed(false);
 
     ConfigManager confMgr;
+    DatagramProcessor dgProc(confMgr);
+    ClipboardManager clbMgr;
+
+    QSignalBlocker dgProcBlker(&dgProc);
+    QSignalBlocker clbMgrBlker(&clbMgr);
+    for(auto o : {&dgProcBlker, &clbMgrBlker}) o->unblock();
 
     QSystemTrayIcon trayIcon;
     QMenu trayMenu;
@@ -31,6 +37,13 @@ int main(int argc, char *argv[])
             ConfigDialog(confMgr).exec();
         });
 
+        auto disable = trayMenu.addAction("Disable");
+        disable->setCheckable(true);
+        QObject::connect(disable, &QAction::toggled, &app, [&dgProcBlker, &clbMgrBlker](bool checked)
+        {
+            for(auto o : {&dgProcBlker, &clbMgrBlker}) if(checked) o->reblock(); else o->unblock();
+        });
+
         QObject::connect(trayMenu.addAction("Quit"), &QAction::triggered, &app, &QCoreApplication::quit);
 
         trayIcon.setContextMenu(&trayMenu);
@@ -40,10 +53,6 @@ int main(int argc, char *argv[])
     {
         QMessageBox::critical(nullptr, app.applicationName(), "System tray not available.");
     }
-
-
-    DatagramProcessor dgProc(confMgr);
-    ClipboardManager clbMgr;
 
     QObject::connect(&clbMgr, &ClipboardManager::dataChanged, &dgProc, &DatagramProcessor::sendDatagram);
     QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, &ClipboardManager::setData);

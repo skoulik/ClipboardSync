@@ -42,9 +42,9 @@ template <typename T> bool ConfigManager::setter(T& dst, const T& src)
     if(dst == src)
         return false;
     dst = src;
-    changed = true;
     if(!seqChanging)
         emit configChanged();
+    changed = seqChanging;
     return true;
 }
 

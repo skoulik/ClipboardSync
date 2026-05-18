@@ -68,7 +68,7 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
     modeCb.addItems({"Broadcast", "Multicast", "Unicast"});
     modeCb.setCurrentIndex(int(confMgr.mode()));
 
-    QObject::connect(&modeCb, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, &getIfaceAddr](int idx)
+    connect(&modeCb, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, &getIfaceAddr](int idx)
     {
         dstAddrEdit.setText(getIfaceAddr(selectedIface, ConfigManager::Mode(idx)).toString());
     });
@@ -78,7 +78,7 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
     portSb.setRange(0, 65535);
     portSb.setValue(confMgr.port());
 
-    QObject::connect(&ifaceMenu, &QMenu::aboutToShow, this, [this]()
+    connect(&ifaceMenu, &QMenu::aboutToShow, this, [this]()
     {
         ifaceMenu.clear();
         for(const QNetworkInterface &iface : QNetworkInterface::allInterfaces())
@@ -101,14 +101,14 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
         }
     });
 
-    QObject::connect(&ifaceMenu, &QMenu::triggered, this, [this, &getIfaceAddr](QAction *action)
+    connect(&ifaceMenu, &QMenu::triggered, this, [this, &getIfaceAddr](QAction *action)
     {
         selectedIface = action->data().value<QNetworkInterface>();
         dstAddrEdit.setText(getIfaceAddr(selectedIface, ConfigManager::Mode(modeCb.currentIndex())).toString());
         ifaceBtn.setText(action->text());
     });
 
-    QObject::connect(&buttonBox, &QDialogButtonBox::accepted, this, [this, &confMgr]
+    connect(&buttonBox, &QDialogButtonBox::accepted, this, [this, &confMgr]
     {        
         auto addr = QHostAddress(dstAddrEdit.text());
         auto mode = ConfigManager::Mode(modeCb.currentIndex());
@@ -136,7 +136,7 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
 
         accept();
     });
-    QObject::connect(&buttonBox, &QDialogButtonBox::rejected, this, &ConfigDialog::reject);
+    connect(&buttonBox, &QDialogButtonBox::rejected, this, &ConfigDialog::reject);
 
     passEdit.setEchoMode(QLineEdit::Password);
 
