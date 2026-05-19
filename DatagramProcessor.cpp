@@ -8,7 +8,7 @@
 DatagramProcessor::PendingTransfer::PendingTransfer(quint16 totalFragmentCount)
   : m_totalFragmentCount(totalFragmentCount)
 {
-    m_age.start();
+    m_idleTimer.start();
 }
 
 bool DatagramProcessor::PendingTransfer::insertFragment(quint16 idx, const QByteArray& data)
@@ -16,7 +16,7 @@ bool DatagramProcessor::PendingTransfer::insertFragment(quint16 idx, const QByte
     if(idx >= m_totalFragmentCount) return false;
     m_fragments.emplace(idx, data);
     m_totalSize += data.size();
-    m_age.restart();
+    m_idleTimer.restart();
     return true;
 }
 
@@ -49,18 +49,15 @@ QDataStream& operator<<(QDataStream& ds, const DatagramProcessor::Header& h)
 
 QDataStream& operator>>(QDataStream& ds, DatagramProcessor::Header& h)
 {
-    quint16 magic;
-    ds >> magic;
-    if(magic != DatagramProcessor::Header::MAGIC)
-        return ds;
-    h.m_magic = magic;
-    ds >> h.m_fragmentCount >> h.m_fragmentIndex >> h.m_reserved >> h.m_transferId;
+    ds >> h.m_magic >> h.m_fragmentCount >> h.m_fragmentIndex >> h.m_reserved >> h.m_transferId;
     return ds;
 }
 
 DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *parent)
     : QObject(parent), m_confMgr(confMgr)
 {
+    m_expiredTransfersRecheckTimer.start();
+
     connect(&confMgr, &ConfigManager::configChanged, this, [this]
     {
         m_socketRx.close();
@@ -113,17 +110,13 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
             quint16 senderPort;
             m_socketRx.readDatagram(data.data(), data.size(), &sender, &senderPort);
 
-            Header hdr(data);
+            const Header hdr(data);
             if(hdr.m_magic != Header::MAGIC || hdr.m_fragmentCount < 1)
                 continue;
 
-            TransferKey key = sender.toString();
-            if(m_pendingTransfers.count(key) != 0 && m_pendingTransfers.at(key).first > hdr.m_transferId)
-                continue;
-            
             QByteArray& payload = data.remove(0, sizeof(Header));
 
-            if(!CryptoEngine::decrypt(payload, m_confMgr.passHash())) // TODO: header^key
+            if(!CryptoEngine::decrypt(payload, CryptoEngine::bindContext(m_confMgr.passHash(), QByteArray::fromRawData(reinterpret_cast<const char*>(&hdr), sizeof(hdr)))))
                 continue;
 
             if(hdr.m_fragmentCount == 1)
@@ -132,10 +125,11 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
                  continue;
             }
 
+            TransferKey key = { sender.toString(), hdr.m_transferId };
             if(m_pendingTransfers.count(key) == 0)
-                m_pendingTransfers.emplace(key, std::pair(hdr.m_transferId, PendingTransfer(hdr.m_fragmentCount)));
+                m_pendingTransfers.emplace(key, hdr.m_fragmentCount);
             
-            PendingTransfer& transfer = m_pendingTransfers.at(key).second;
+            PendingTransfer& transfer = m_pendingTransfers.at(key);
             
             if(hdr.m_fragmentIndex >= transfer.totalFragmentCount() || transfer.contains(hdr.m_fragmentIndex))
                 continue;
@@ -147,6 +141,7 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
                 m_pendingTransfers.erase(key);
             }
         }
+        purgeExpiredTransfers();
     });
 }
 
@@ -165,7 +160,7 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
         Header hdr(fragmentCount, i, transferId);
 
         QByteArray fragmentPayload = payload.mid(offset, length);
-        CryptoEngine::encrypt(fragmentPayload, m_confMgr.passHash()); // TODO: header^key
+        CryptoEngine::encrypt(fragmentPayload, CryptoEngine::bindContext(m_confMgr.passHash(), QByteArray::fromRawData(reinterpret_cast<const char*>(&hdr), sizeof(hdr))));
 
         QByteArray fragment(sizeof(Header) + fragmentPayload.size(), Qt::Uninitialized);
         QDataStream ds(&fragment, QIODevice::WriteOnly);
@@ -179,5 +174,20 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
             return false;
     }
     return true;
+}
+
+void DatagramProcessor::purgeExpiredTransfers()
+{
+    if(m_expiredTransfersRecheckTimer.elapsed() < TRANSFER_TIMEOUT_MS)
+        return;
+
+    for(auto it = m_pendingTransfers.begin(); it != m_pendingTransfers.end(); )
+    {
+        if(it->second.idleTime() > TRANSFER_TIMEOUT_MS)
+            it = m_pendingTransfers.erase(it);
+        else
+            ++it;
+    }
+    m_expiredTransfersRecheckTimer.restart();
 }
 

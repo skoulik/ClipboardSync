@@ -6,6 +6,7 @@
 #include <QUdpSocket>
 #include <QHostAddress>
 #include <QElapsedTimer>
+#include <QRandomGenerator>
 
 
 class DatagramProcessor : public QObject
@@ -19,7 +20,7 @@ class DatagramProcessor : public QObject
         const quint16                 m_totalFragmentCount {0};
         std::map<quint16, QByteArray> m_fragments;
         quint32                       m_totalSize          {0};
-        QElapsedTimer                 m_age;
+        QElapsedTimer                 m_idleTimer;
 
       public:
         PendingTransfer(quint16 totalFragmentCount);
@@ -28,6 +29,7 @@ class DatagramProcessor : public QObject
         quint16 totalFragmentCount() const { return m_totalFragmentCount; }
         bool insertFragment(quint16 idx, const QByteArray& data);
         QByteArray reassemble() const;
+        quint64 idleTime() const { return m_idleTimer.elapsed(); }
     };
 
     struct Header
@@ -50,13 +52,19 @@ class DatagramProcessor : public QObject
   private:
     const ConfigManager& m_confMgr;
 
+    static constexpr quint64 TRANSFER_TIMEOUT_MS = 10000;
     static constexpr quint32 MAX_DATAGRAM_SIZE = 1500; // TODO: make configurable
-    static constexpr quint32 MAX_PAYLOAD_SIZE  = MAX_DATAGRAM_SIZE - sizeof(Header);
+                                                                  // IP4 UDP                  pad   iv
+    static constexpr quint32 MAX_PAYLOAD_SIZE  = MAX_DATAGRAM_SIZE - 20 - 8 - sizeof(Header) - 16 - 16;
 
     QUdpSocket m_socketTx, m_socketRx;
-    quint32 m_transferIdCounter {0};
-    using TransferKey = QString;                                                    // Key: sender address string
-    std::map<TransferKey, std::pair<quint32, PendingTransfer>> m_pendingTransfers;  // Val: {current transfer id, transfer session}
+    quint32 m_transferIdCounter { QRandomGenerator::global()->generate() };
+    using TransferKey = std::pair<QString, quint32>;            // Key: {sender address string, transfer id}
+    std::map<TransferKey, PendingTransfer> m_pendingTransfers;  // Val: transfer session
+    QElapsedTimer m_expiredTransfersRecheckTimer;
+
+  private slots:
+    void purgeExpiredTransfers();
 
   public:
     DatagramProcessor(const ConfigManager& confMgr, QObject *parent = nullptr);

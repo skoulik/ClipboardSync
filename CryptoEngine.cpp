@@ -4,9 +4,19 @@
 #include <QRandomGenerator>
 
 
+QByteArray CryptoEngine::deriveKey(const QByteArray &data, const QByteArray &salt, int iterations, quint64 keyLen)
+{
+    return QPasswordDigestor::deriveKeyPbkdf2(QCryptographicHash::Sha256, data, salt, iterations, keyLen);
+}
+
 QByteArray CryptoEngine::deriveKey(const QString &password, const QByteArray &salt)
 {
-    return QPasswordDigestor::deriveKeyPbkdf2(QCryptographicHash::Sha256, password.toUtf8(), salt, KDF_ITERATIONS, AES_KEYLEN);
+    return deriveKey(password.toUtf8(), salt, KDF_MASTER_KEY_ITERATIONS, AES_KEYLEN);
+}
+
+QByteArray CryptoEngine::bindContext(const QByteArray& masterKey, const QByteArray &associatedData)
+{
+    return deriveKey(masterKey, associatedData, KDF_AAD_ITERATIONS, AES_KEYLEN);
 }
 
 void CryptoEngine::encrypt(QByteArray &data, const QByteArray &key)
