@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     }
 
     QObject::connect(&clbMgr, &ClipboardManager::dataChanged, &dgProc, &DatagramProcessor::sendDatagram);
-    QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, &ClipboardManager::setData);
+    QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, [&clbMgr](const QByteArray& data){ clbMgr.setData(data); });
 
     emit confMgr.configChanged();
     return app.exec();

@@ -23,7 +23,7 @@ class ClipboardManager : public QObject
     ClipboardManager(QObject* parent = nullptr);
 
   public slots:
-    void setData(const QByteArray& data);
+    void setData(const QByteArray& data, bool emitDataChanged = false);
 
   signals:
     void dataChanged(const QByteArray& data);
