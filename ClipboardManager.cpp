@@ -15,6 +15,8 @@ ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent)
   #endif
         [this]
         {
+            if(signalsBlocked()) return;
+
             const QMimeData* mimeData = m_clipboard->mimeData();
             if(mimeData && mimeData->hasFormat("text/plain"))
             {

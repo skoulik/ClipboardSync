@@ -104,6 +104,12 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
     {
         while(m_socketRx.hasPendingDatagrams())
         {
+            if(signalsBlocked())
+            {
+                m_socketRx.readDatagram(nullptr, 0); // discard
+                continue;
+            }
+
             QByteArray data;
             data.resize(static_cast<int>(m_socketRx.pendingDatagramSize()));
             QHostAddress sender;

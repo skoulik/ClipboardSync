@@ -21,10 +21,6 @@ int main(int argc, char *argv[])
     DatagramProcessor dgProc(confMgr);
     ClipboardManager clbMgr;
 
-    QSignalBlocker dgProcBlker(&dgProc);
-    QSignalBlocker clbMgrBlker(&clbMgr);
-    for(auto o : {&dgProcBlker, &clbMgrBlker}) o->unblock();
-
     QSystemTrayIcon trayIcon;
     QMenu trayMenu;
     if(QSystemTrayIcon::isSystemTrayAvailable())
@@ -39,9 +35,9 @@ int main(int argc, char *argv[])
 
         auto disable = trayMenu.addAction("Disable");
         disable->setCheckable(true);
-        QObject::connect(disable, &QAction::toggled, &app, [&dgProcBlker, &clbMgrBlker](bool checked)
+        QObject::connect(disable, &QAction::toggled, &app, [&dgProc, &clbMgr](bool checked)
         {
-            for(auto o : {&dgProcBlker, &clbMgrBlker}) if(checked) o->reblock(); else o->unblock();
+            [=](auto&... o) { (o.blockSignals(checked), ...); }(dgProc, clbMgr);
         });
 
         QObject::connect(trayMenu.addAction("Quit"), &QAction::triggered, &app, &QCoreApplication::quit);
