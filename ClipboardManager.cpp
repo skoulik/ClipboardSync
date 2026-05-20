@@ -4,38 +4,44 @@
 
 ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent)
 {
-    const QMimeData* mimeData = clipboard->mimeData();
-    lastDataHash = mimeData->hasFormat("text/plain") ? qHash(mimeData->data("text/plain")) : 0;
+    const QMimeData* mimeData = m_clipboard->mimeData();
+    if(mimeData->hasFormat("text/plain"))
+        m_lastDataHash = qHash(mimeData->data("text/plain"));
 
   #ifdef Q_OS_MAC
-    connect(&pollTimer, &QTimer::timeout, this,
+    connect(&m_pollTimer, &QTimer::timeout, this,
   #else
-    connect(clipboard, &QClipboard::dataChanged, this,
+    connect(m_clipboard, &QClipboard::dataChanged, this,
   #endif
         [this]
         {
-            const QMimeData* mimeData = clipboard->mimeData();
+            const QMimeData* mimeData = m_clipboard->mimeData();
             if(mimeData->hasFormat("text/plain"))
             {
                 QByteArray data = mimeData->data("text/plain");
                 uint newDataHash = qHash(data);
-                if(newDataHash != lastDataHash)
+                if(newDataHash != m_lastDataHash)
                 {
-                    lastDataHash = newDataHash;
+                    m_lastDataHash = newDataHash;
                     emit dataChanged(data);
                 }
             }
         }
     );
   #ifdef Q_OS_MAC
-    pollTimer.start(1000);
+    m_pollTimer.start(1000);
   #endif
 }
 
 void ClipboardManager::setData(const QByteArray& data)
 {
+    uint newDataHash = qHash(data);
+    if(newDataHash == m_lastDataHash)
+        return;
+
+    m_lastDataHash = newDataHash;
     auto mimeData = new QMimeData;
     mimeData->setData("text/plain", data);
-    clipboard->setMimeData(mimeData);
+    m_clipboard->setMimeData(mimeData);
 }
 

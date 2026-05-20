@@ -13,10 +13,10 @@ class ClipboardManager : public QObject
 {
     Q_OBJECT
   private:   
-    uint lastDataHash     { 0 };
-    QClipboard* clipboard { QApplication::clipboard() };
+    uint m_lastDataHash     { 0 };
+    QClipboard* m_clipboard { QApplication::clipboard() };
   #ifdef Q_OS_MAC
-    QTimer pollTimer;
+    QTimer m_pollTimer;
   #endif
 
   public:

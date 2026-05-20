@@ -94,7 +94,7 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
                 if(!m_socketTx.bind(bindAddr, 0))
                     QMessageBox::critical(nullptr, QCoreApplication::applicationName(), "Failed to bind UDP Tx socket.");
                 m_socketTx.setMulticastInterface(iface);
-                m_socketTx.setSocketOption(QAbstractSocket::MulticastTtlOption, 3);
+                m_socketTx.setSocketOption(QAbstractSocket::MulticastTtlOption, 3); // TODO: make configurable
             }
             break;
         }
