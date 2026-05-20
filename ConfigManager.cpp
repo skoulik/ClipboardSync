@@ -26,14 +26,14 @@ ConfigManager::~ConfigManager()
 
 void ConfigManager::beginSeqChange()
 {
-    changed = false;
-    seqChanging = true;
+    m_changed = false;
+    m_seqChanging = true;
 }
 
 void ConfigManager::endSeqChange()
 {
-    seqChanging = false;
-    if(changed)
+    m_seqChanging = false;
+    if(m_changed)
         emit configChanged();
 }
 
@@ -42,9 +42,9 @@ template <typename T> bool ConfigManager::setter(T& dst, const T& src)
     if(dst == src)
         return false;
     dst = src;
-    if(!seqChanging)
+    if(!m_seqChanging)
         emit configChanged();
-    changed = seqChanging;
+    m_changed = m_seqChanging;
     return true;
 }
 

@@ -18,7 +18,7 @@ SOURCES += \
     ConfigManager.cpp \
     CryptoEngine.cpp \
     DatagramProcessor.cpp\
-    thirdparty\tiny-AES-c\aes.c
+    thirdparty/tiny-AES-c/aes.c
 
 RESOURCES += resources.qrc
 

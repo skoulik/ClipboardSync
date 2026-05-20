@@ -93,6 +93,11 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
                 continue;
             if(!flags.testFlag(QNetworkInterface::IsUp) || !flags.testFlag(QNetworkInterface::IsRunning))
                 continue;
+            if(iface.addressEntries().isEmpty())
+                continue;
+            QString mac = iface.hardwareAddress();
+            if(mac.isEmpty() || mac == "00:00:00:00:00:00")
+                continue;
 
             QAction* action = ifaceMenu.addAction(iface.humanReadableName());
             action->setCheckable(true);

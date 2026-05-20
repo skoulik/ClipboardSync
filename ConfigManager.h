@@ -42,8 +42,8 @@ class ConfigManager : public QObject
     QHostAddress m_addr      { "255.255.255.255" };
     quint16 m_port           { 19211 };
     QByteArray m_passHash;
-    bool seqChanging         { false };
-    bool changed             { false };
+    bool m_seqChanging       { false };
+    bool m_changed           { false };
 
     template <typename T> bool setter(T& dst, const T& src);
 };
