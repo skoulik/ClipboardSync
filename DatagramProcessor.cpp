@@ -3,6 +3,7 @@
 #include <QNetworkInterface>
 #include <QMessageBox>
 #include <QCoreApplication>
+#include <QApplication>
 
 
 DatagramProcessor::PendingTransfer::PendingTransfer(quint16 totalFragmentCount)
@@ -178,6 +179,8 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
         const qint64 sent = m_socketTx.writeDatagram(fragment, m_confMgr.addr(), m_confMgr.port());
         if(sent != fragment.size())
             return false;
+
+        QApplication::processEvents(); // Do not block receiving side
     }
     return true;
 }

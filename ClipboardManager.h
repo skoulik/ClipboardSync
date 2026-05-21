@@ -19,14 +19,17 @@ class ClipboardManager : public QObject
     QTimer m_pollTimer;
   #endif
 
+    static QByteArray serialize(const QMimeData* mime);
+    static std::unique_ptr<QMimeData> deserialize(const QByteArray& data);
+
   public:
     ClipboardManager(QObject* parent = nullptr);
 
   public slots:
-    void setData(const QByteArray& data, bool emitDataChanged = false);
+    void setData(const QByteArray& serializedData, bool emitDataChanged = false);
 
   signals:
-    void dataChanged(const QByteArray& data);
+    void dataChanged(const QByteArray& serializedData);
 };
 
 #endif // CLIPBOARDMANAGER_H
