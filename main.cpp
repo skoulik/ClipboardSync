@@ -6,6 +6,7 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QMessageBox>
+#include <QTimer>
 
 
 int main(int argc, char *argv[])
@@ -21,26 +22,38 @@ int main(int argc, char *argv[])
     DatagramProcessor dgProc(confMgr);
     ClipboardManager clbMgr;
 
+    enum { icnIdle = 0, icnTransmitting, icnDisabled };
+    QIcon icons[] = {QIcon(":/TrayIcon.png"), QIcon(":/TrayIconTransmitting.png"), QIcon(":/TrayIconDisabled.png")};
+
     QSystemTrayIcon trayIcon;
     QMenu trayMenu;
     if(QSystemTrayIcon::isSystemTrayAvailable())
     {
-        trayIcon.setIcon(QIcon(":/TrayIcon.png"));
+        trayIcon.setIcon(icons[icnIdle]);
         trayIcon.setToolTip(app.applicationName());
 
-        QObject::connect(trayMenu.addAction("Config..."), &QAction::triggered, &app, [&confMgr]
+        QObject::connect(trayMenu.addAction("Config..."), &QAction::triggered, &app, [&]
         {
             ConfigDialog(confMgr).exec();
         });
 
         auto disable = trayMenu.addAction("Disable");
         disable->setCheckable(true);
-        QObject::connect(disable, &QAction::toggled, &app, [&dgProc, &clbMgr](bool checked)
+        QObject::connect(disable, &QAction::toggled, &app, [&](bool disabled)
         {
-            [=](auto&... o) { (o.blockSignals(checked), ...); }(dgProc, clbMgr);
+            [=](auto&... o) { (o.blockSignals(disabled), ...); }(dgProc, clbMgr);
+            trayIcon.setIcon(icons[disabled ? icnDisabled : icnIdle]);
         });
 
         QObject::connect(trayMenu.addAction("Quit"), &QAction::triggered, &app, &QCoreApplication::quit);
+
+        QObject::connect(&dgProc, &DatagramProcessor::transmitStateChanged, &app, [&](bool transmitting)
+        {
+            if(transmitting)
+                trayIcon.setIcon(icons[icnTransmitting]);
+            else
+                QTimer::singleShot(100, [&]{ trayIcon.setIcon(icons[icnIdle]); });
+        });
 
         trayIcon.setContextMenu(&trayMenu);
         trayIcon.show();
@@ -51,7 +64,7 @@ int main(int argc, char *argv[])
     }
 
     QObject::connect(&clbMgr, &ClipboardManager::dataChanged, &dgProc, &DatagramProcessor::sendDatagram);
-    QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, [&clbMgr](const QByteArray& data){ clbMgr.setData(data); });
+    QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, [&](const QByteArray& data){ clbMgr.setData(data); });
 
     emit confMgr.configChanged();
     return app.exec();

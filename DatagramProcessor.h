@@ -53,9 +53,6 @@ class DatagramProcessor : public QObject
     const ConfigManager& m_confMgr;
 
     static constexpr quint64 TRANSFER_TIMEOUT_MS = 10000;
-    static constexpr quint32 MAX_DATAGRAM_SIZE = 1500; // TODO: make configurable
-                                                                  // IP4 UDP                  pad   iv
-    static constexpr quint32 MAX_PAYLOAD_SIZE  = MAX_DATAGRAM_SIZE - 20 - 8 - sizeof(Header) - 16 - 16;
 
     QUdpSocket m_socketTx, m_socketRx;
     quint32 m_transferIdCounter { QRandomGenerator::global()->generate() };
@@ -74,6 +71,7 @@ class DatagramProcessor : public QObject
 
   signals:
     void datagramReceived(const QByteArray& payload, const QHostAddress& sender, quint16 senderPort);
+    void transmitStateChanged(bool transmitting);
 };
 
 QDataStream& operator<<(QDataStream&, const DatagramProcessor::Header&);

@@ -23,6 +23,7 @@ class ConfigManager : public QObject
     Mode mode() const { return m_mode; }
     const QHostAddress& addr() const { return m_addr; }
     quint16 port() const { return m_port; }
+    quint16 mtu() const { return m_mtu; }
     QByteArray passHash() const { return m_passHash; }
 
     void beginSeqChange();
@@ -31,6 +32,7 @@ class ConfigManager : public QObject
     bool setMode(Mode mode);
     bool setAddr(const QHostAddress& addr);
     bool setPort(quint16 port);
+    bool setMtu(quint16 mtu);
     bool setPass(const QString& pass, quint16 salt);
 
   signals:
@@ -41,6 +43,7 @@ class ConfigManager : public QObject
     Mode m_mode              { Mode::Broadcast };
     QHostAddress m_addr      { "255.255.255.255" };
     quint16 m_port           { 19211 };
+    quint16 m_mtu            { 1500 };
     QByteArray m_passHash;
     bool m_seqChanging       { false };
     bool m_changed           { false };

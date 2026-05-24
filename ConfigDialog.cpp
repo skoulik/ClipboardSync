@@ -13,13 +13,13 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
   : QDialog(parent, Qt::WindowTitleHint | Qt::WindowCloseButtonHint)
 {
     setWindowTitle(QCoreApplication::applicationName());
-    ifaceBtn.setText("Select Interface");
-    ifaceBtn.setPopupMode(QToolButton::InstantPopup);
-    ifaceBtn.setMenu(&ifaceMenu);
+    m_ifaceBtn.setText("Select Interface");
+    m_ifaceBtn.setPopupMode(QToolButton::InstantPopup);
+    m_ifaceBtn.setMenu(&m_ifaceMenu);
 
-    selectedIface = QNetworkInterface::interfaceFromName(confMgr.ifaceName());
-    if(selectedIface.isValid())
-        ifaceBtn.setText(selectedIface.humanReadableName());
+    m_selectedIface = QNetworkInterface::interfaceFromName(confMgr.ifaceName());
+    if(m_selectedIface.isValid())
+        m_ifaceBtn.setText(m_selectedIface.humanReadableName());
 
     auto getIfaceAddr = [](QNetworkInterface& iface, ConfigManager::Mode mode) -> QHostAddress
     {
@@ -65,22 +65,25 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
         return QHostAddress("255.255.255.255");
     };
 
-    modeCb.addItems({"Broadcast", "Multicast", "Unicast"});
-    modeCb.setCurrentIndex(int(confMgr.mode()));
+    m_modeCb.addItems({"Broadcast", "Multicast", "Unicast"});
+    m_modeCb.setCurrentIndex(int(confMgr.mode()));
 
-    connect(&modeCb, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, &getIfaceAddr](int idx)
+    connect(&m_modeCb, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, &getIfaceAddr](int idx)
     {
-        dstAddrEdit.setText(getIfaceAddr(selectedIface, ConfigManager::Mode(idx)).toString());
+        m_dstAddrEdit.setText(getIfaceAddr(m_selectedIface, ConfigManager::Mode(idx)).toString());
     });
 
-    dstAddrEdit.setText(confMgr.addr().toString());
+    m_dstAddrEdit.setText(confMgr.addr().toString());
 
-    portSb.setRange(0, 65535);
-    portSb.setValue(confMgr.port());
+    m_portSb.setRange(0, 65535);
+    m_portSb.setValue(confMgr.port());
 
-    connect(&ifaceMenu, &QMenu::aboutToShow, this, [this]()
+    m_mtuSb.setRange(128, 65535);
+    m_mtuSb.setValue(confMgr.mtu());
+
+    connect(&m_ifaceMenu, &QMenu::aboutToShow, this, [this]()
     {
-        ifaceMenu.clear();
+        m_ifaceMenu.clear();
         for(const QNetworkInterface &iface : QNetworkInterface::allInterfaces())
         {
             auto type = iface.type();
@@ -99,61 +102,64 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
             if(mac.isEmpty() || mac == "00:00:00:00:00:00")
                 continue;
 
-            QAction* action = ifaceMenu.addAction(iface.humanReadableName());
+            QAction* action = m_ifaceMenu.addAction(iface.humanReadableName());
             action->setCheckable(true);
-            action->setChecked(iface.name() == selectedIface.name());
+            action->setChecked(iface.name() == m_selectedIface.name());
             action->setData(QVariant::fromValue<QNetworkInterface>(iface));
         }
     });
 
-    connect(&ifaceMenu, &QMenu::triggered, this, [this, &getIfaceAddr](QAction *action)
+    connect(&m_ifaceMenu, &QMenu::triggered, this, [this, &getIfaceAddr](QAction *action)
     {
-        selectedIface = action->data().value<QNetworkInterface>();
-        dstAddrEdit.setText(getIfaceAddr(selectedIface, ConfigManager::Mode(modeCb.currentIndex())).toString());
-        ifaceBtn.setText(action->text());
+        m_selectedIface = action->data().value<QNetworkInterface>();
+        m_dstAddrEdit.setText(getIfaceAddr(m_selectedIface, ConfigManager::Mode(m_modeCb.currentIndex())).toString());
+        m_ifaceBtn.setText(action->text());
     });
 
-    connect(&buttonBox, &QDialogButtonBox::accepted, this, [this, &confMgr]
+    connect(&m_buttonBox, &QDialogButtonBox::accepted, this, [this, &confMgr]
     {        
-        auto addr = QHostAddress(dstAddrEdit.text());
-        auto mode = ConfigManager::Mode(modeCb.currentIndex());
+        auto addr = QHostAddress(m_dstAddrEdit.text());
+        auto mode = ConfigManager::Mode(m_modeCb.currentIndex());
         if(addr.isNull() ||
            mode == ConfigManager::Mode::Broadcast && addr.protocol() != QAbstractSocket::IPv4Protocol ||
            mode == ConfigManager::Mode::Multicast && !addr.isMulticast())
         {
-            dstAddrEdit.setFocus();
+            m_dstAddrEdit.setFocus();
             return;
         }
 
-        if(passEdit.text().isEmpty())
+        if(m_passEdit.text().isEmpty())
         {
-            passEdit.setFocus();
+            m_passEdit.setFocus();
             return;
         }
 
         confMgr.beginSeqChange();
-          confMgr.setIfaceName(selectedIface.name());
+          confMgr.setIfaceName(m_selectedIface.name());
           confMgr.setMode(mode);
-          confMgr.setAddr(QHostAddress(dstAddrEdit.text()));
-          confMgr.setPort(portSb.value());
-          confMgr.setPass(passEdit.text(), portSb.value()); // The port number serves as the salt for the pass hash
+          confMgr.setAddr(QHostAddress(m_dstAddrEdit.text()));
+          confMgr.setPort(m_portSb.value());
+          confMgr.setMtu(m_mtuSb.value());
+          confMgr.setPass(m_passEdit.text(), m_portSb.value()); // The port number serves as the salt for the pass hash
         confMgr.endSeqChange();
 
         accept();
     });
-    connect(&buttonBox, &QDialogButtonBox::rejected, this, &ConfigDialog::reject);
 
-    passEdit.setEchoMode(QLineEdit::Password);
+    m_passEdit.setEchoMode(QLineEdit::Password);
+
+    connect(&m_buttonBox, &QDialogButtonBox::rejected, this, &ConfigDialog::reject);
 
     QFormLayout *formLayout = new QFormLayout;
-    formLayout->addRow("Network Interface", &ifaceBtn);
-    formLayout->addRow("Operating Mode", &modeCb);
-    formLayout->addRow("Destination Address", &dstAddrEdit);
-    formLayout->addRow("Port", &portSb);
-    formLayout->addRow("Password", &passEdit);
+    formLayout->addRow("Network Interface", &m_ifaceBtn);
+    formLayout->addRow("Operating Mode", &m_modeCb);
+    formLayout->addRow("Destination Address", &m_dstAddrEdit);
+    formLayout->addRow("Port", &m_portSb);
+    formLayout->addRow("Max datagram size", &m_mtuSb);
+    formLayout->addRow("Password", &m_passEdit);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(formLayout);
-    mainLayout->addWidget(&buttonBox);
+    mainLayout->addWidget(&m_buttonBox);
 }
 

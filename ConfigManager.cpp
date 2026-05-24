@@ -11,6 +11,7 @@ ConfigManager::ConfigManager(QObject* parent)
     m_mode      = Mode(settings.value("mode").toUInt());
     m_addr      = QHostAddress(settings.value("addr", m_addr.toString()).toString());
     m_port      = settings.value("port", m_port).toUInt();
+    m_mtu       = settings.value("mtu", m_mtu).toUInt();
     m_passHash  = settings.value("pass", m_passHash).toByteArray();
 }
 
@@ -21,6 +22,7 @@ ConfigManager::~ConfigManager()
     settings.setValue("mode",      uint(m_mode));
     settings.setValue("addr",      m_addr.toString());
     settings.setValue("port",      m_port);
+    settings.setValue("mtu",       m_mtu);
     settings.setValue("pass",      m_passHash);
 }
 
@@ -66,6 +68,11 @@ bool ConfigManager::setAddr(const QHostAddress& addr)
 bool ConfigManager::setPort(quint16 port)
 {
     return setter(m_port, port);
+}
+
+bool ConfigManager::setMtu(quint16 mtu)
+{
+    return setter(m_mtu, mtu);
 }
 
 bool ConfigManager::setPass(const QString& pass, quint16 slt)

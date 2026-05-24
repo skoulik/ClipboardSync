@@ -154,15 +154,19 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
 
 bool DatagramProcessor::sendDatagram(const QByteArray& payload)
 {
-    const int fragmentCount = (payload.size() + MAX_PAYLOAD_SIZE - 1) / MAX_PAYLOAD_SIZE;
+    emit transmitStateChanged(true);
+    auto atExit = std::shared_ptr<void>(nullptr, [=](...){ emit transmitStateChanged(false); });
+                                              // IP4 UDP                  pad   iv
+    const quint32 maxPayload = m_confMgr.mtu() - 20 - 8 - sizeof(Header) - 16 - 16;
+    const int fragmentCount = (payload.size() + maxPayload - 1) / maxPayload;
     if(fragmentCount > std::numeric_limits<quint16>::max())
         return false;
 
     const quint32 transferId = m_transferIdCounter++;
     for(int i = 0; i < fragmentCount; ++i)
     {
-        const int offset  = i * MAX_PAYLOAD_SIZE;
-        const int length  = qMin(MAX_PAYLOAD_SIZE, static_cast<quint32>(payload.size() - offset));
+        const int offset  = i * maxPayload;
+        const int length  = qMin(maxPayload, static_cast<quint32>(payload.size() - offset));
 
         Header hdr(fragmentCount, i, transferId);
 

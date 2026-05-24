@@ -16,14 +16,15 @@ class ConfigDialog : public QDialog
 {
     Q_OBJECT
   private:
-    QToolButton ifaceBtn       { this };
-    QMenu ifaceMenu            { this };
-    QComboBox modeCb           { this };
-    QLineEdit dstAddrEdit      { this };
-    QSpinBox portSb            { this };
-    QLineEdit passEdit         { this };
-    QDialogButtonBox buttonBox { QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this };
-    QNetworkInterface selectedIface;
+    QToolButton m_ifaceBtn       { this };
+    QMenu m_ifaceMenu            { this };
+    QComboBox m_modeCb           { this };
+    QLineEdit m_dstAddrEdit      { this };
+    QSpinBox m_portSb            { this };
+    QSpinBox m_mtuSb             { this };
+    QLineEdit m_passEdit         { this };
+    QDialogButtonBox m_buttonBox { QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this };
+    QNetworkInterface m_selectedIface;
 
   public:
     ConfigDialog(ConfigManager& confMgr, QWidget *parent = nullptr);
