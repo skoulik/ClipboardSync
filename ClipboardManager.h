@@ -20,7 +20,7 @@ class ClipboardManager : public QObject
   #endif
 
     static QByteArray serialize(const QMimeData* mime);
-    static std::unique_ptr<QMimeData> deserialize(const QByteArray& data);
+    static std::unique_ptr<QMimeData> deserialize(const QByteArray& serializedData);
 
   public:
     ClipboardManager(QObject* parent = nullptr);

@@ -15,9 +15,9 @@ QByteArray ClipboardManager::serialize(const QMimeData* mime)
     return result;
 }
 
-std::unique_ptr<QMimeData> ClipboardManager::deserialize(const QByteArray& serializedDdata)
+std::unique_ptr<QMimeData> ClipboardManager::deserialize(const QByteArray& serializedData)
 {
-    QDataStream ds(serializedDdata);
+    QDataStream ds(serializedData);
     auto mimeData = std::make_unique<QMimeData>();
     while(ds.status() == QDataStream::Ok)
     {

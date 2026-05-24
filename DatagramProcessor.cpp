@@ -14,7 +14,8 @@ DatagramProcessor::PendingTransfer::PendingTransfer(quint16 totalFragmentCount)
 
 bool DatagramProcessor::PendingTransfer::insertFragment(quint16 idx, const QByteArray& data)
 {
-    if(idx >= m_totalFragmentCount) return false;
+    if(idx >= m_totalFragmentCount || m_fragments.count(idx) > 0)
+        return false;
     m_fragments.emplace(idx, data);
     m_totalSize += data.size();
     m_idleTimer.restart();
@@ -122,7 +123,7 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
                 continue;
 
             QByteArray& payload = data.remove(0, sizeof(Header));
-
+            // TODO: hdr endianess
             if(!CryptoEngine::decrypt(payload, CryptoEngine::bindContext(m_confMgr.passHash(), QByteArray::fromRawData(reinterpret_cast<const char*>(&hdr), sizeof(hdr)))))
                 continue;
 
@@ -158,6 +159,9 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
     auto atExit = std::shared_ptr<void>(nullptr, [=](...){ emit transmitStateChanged(false); });
                                               // IP4 UDP                  pad   iv
     const quint32 maxPayload = m_confMgr.mtu() - 20 - 8 - sizeof(Header) - 16 - 16;
+    if(maxPayload <= 0)
+        return false;
+
     const int fragmentCount = (payload.size() + maxPayload - 1) / maxPayload;
     if(fragmentCount > std::numeric_limits<quint16>::max())
         return false;
@@ -171,6 +175,7 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
         Header hdr(fragmentCount, i, transferId);
 
         QByteArray fragmentPayload = payload.mid(offset, length);
+        // TODO: hdr endianess
         CryptoEngine::encrypt(fragmentPayload, CryptoEngine::bindContext(m_confMgr.passHash(), QByteArray::fromRawData(reinterpret_cast<const char*>(&hdr), sizeof(hdr))));
 
         QByteArray fragment(sizeof(Header) + fragmentPayload.size(), Qt::Uninitialized);
@@ -184,7 +189,7 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
         if(sent != fragment.size())
             return false;
 
-        QApplication::processEvents(); // Do not block receiving side
+        QApplication::processEvents(); // Do not block receiving side // TODO: use async sending instead
     }
     return true;
 }
