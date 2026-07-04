@@ -32,8 +32,8 @@ There is no test suite and no linter configured.
 
 - Development targets **VS 2026 Community Insiders** (v18.x, prerelease channel; VS 2022 and 2019 are also installed). `vswhere.exe` (at its fixed location `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\`) lists VS 2026 **only with `-prerelease`**.
 - `cmake` and `ninja` are **not on PATH**; the VS-bundled ones become available after entering the dev environment — either the "x64 Native Tools Command Prompt for VS 2026" or `call "<VS>\Common7\Tools\VsDevCmd.bat" -arch=amd64`. Verified inside it: MSVC `cl` 19.51 (x64), CMake 4.2 (4.x — no pre-3.5 policy compat), Ninja 1.13. The Insiders `VsDevCmd.bat` prints a harmless `'vswhere.exe' is not recognized` warning.
-- Qt 6.12 **static** build at `%QT2026%\amd64` (env var `QT2026`), configured with `static` + `static_runtime` → link with the static CRT (`/MT`, `MultiThreaded*` in CMake terms); `debug_and_release` libs are present. Set `CMAKE_PREFIX_PATH=%QT2026%\amd64` before configuring.
-- The Qt libs were compiled with clang-cl (mkspec `win32-clang-msvc`) and reference `clang_rt.builtins-x86_64.lib`; CMakeLists.txt locates it in the VS-bundled Clang toolchain via `VCToolsInstallDir`, so the app itself builds with plain MSVC `cl`.
+- Qt 6.12 **static** build at `%QT2026%\amd64` (env var `QT2026`), configured with `static` + `static_runtime`; `debug_and_release` libs are present. Set `CMAKE_PREFIX_PATH=%QT2026%\amd64` before configuring. CMakeLists.txt is agnostic to the Qt build's CRT flavor: `qt_add_executable` itself applies `/MT` to the target when (and only when) the Qt install reports `static_runtime`.
+- The Qt libs were compiled with clang-cl (mkspec `win32-clang-msvc`) and reference `clang_rt.builtins-x86_64.lib`; CMakeLists.txt locates it in the VS-bundled Clang toolchain via `VCToolsInstallDir` (a no-op for cl-built Qt), so the app itself builds with plain MSVC `cl`.
 
 ## Architecture
 

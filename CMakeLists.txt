@@ -3,7 +3,6 @@ project(ClipboardSync LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
 qt_standard_project_setup()
@@ -23,8 +22,8 @@ qt_add_executable(ClipboardSync
 target_compile_definitions(ClipboardSync PRIVATE AES256=1 ECB=0 CTR=0)
 target_link_libraries(ClipboardSync PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network)
 
-# The static Qt libs are built with clang-cl and reference clang_rt.builtins, which is not
-# on MSVC's default lib path; find it in the Clang toolchain bundled with Visual Studio.
+# Qt libs built with clang-cl reference clang_rt.builtins, which is not on MSVC's default
+# lib path; find it in the Clang toolchain bundled with Visual Studio (inert for cl-built Qt).
 if(MSVC)
     file(TO_CMAKE_PATH "$ENV{VCToolsInstallDir}" VC_TOOLS_DIR)
     file(GLOB CLANG_RT_LIB_DIR "${VC_TOOLS_DIR}/../../Llvm/x64/lib/clang/*/lib/windows")
