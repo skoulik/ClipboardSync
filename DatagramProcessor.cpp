@@ -3,7 +3,6 @@
 #include <QNetworkInterface>
 #include <QMessageBox>
 #include <QCoreApplication>
-#include <QApplication>
 
 
 DatagramProcessor::PendingTransfer::PendingTransfer(quint16 totalFragmentCount)
@@ -157,8 +156,8 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
 {
     emit transmitStateChanged(true);
     auto atExit = std::shared_ptr<void>(nullptr, [=](...){ emit transmitStateChanged(false); });
-                                              // IP4 UDP                  pad   iv
-    const quint32 maxPayload = m_confMgr.mtu() - 20 - 8 - sizeof(Header) - 16 - 16;
+                                             // IP4 UDP                          pad   iv
+    const qint32 maxPayload = m_confMgr.mtu() - 20 - 8 - qint32(sizeof(Header)) - 16 - 16;
     if(maxPayload <= 0)
         return false;
 
@@ -170,7 +169,7 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
     for(int i = 0; i < fragmentCount; ++i)
     {
         const int offset  = i * maxPayload;
-        const int length  = qMin(maxPayload, static_cast<quint32>(payload.size() - offset));
+        const int length  = qMin(maxPayload, static_cast<qint32>(payload.size() - offset));
 
         Header hdr(fragmentCount, i, transferId);
 
@@ -188,8 +187,6 @@ bool DatagramProcessor::sendDatagram(const QByteArray& payload)
         const qint64 sent = m_socketTx.writeDatagram(fragment, m_confMgr.addr(), m_confMgr.port());
         if(sent != fragment.size())
             return false;
-
-        QApplication::processEvents(); // Do not block receiving side // TODO: use async sending instead
     }
     return true;
 }

@@ -4,10 +4,8 @@
 #include <QFormLayout>
 #include <QHostAddress>
 #include <QActionGroup>
-#include <QMetaType>
 #include <QCoreApplication>
 
-Q_DECLARE_METATYPE(QHostAddress);
 
 ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
   : QDialog(parent, Qt::WindowTitleHint | Qt::WindowCloseButtonHint)
@@ -68,7 +66,7 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
     m_modeCb.addItems({"Broadcast", "Multicast", "Unicast"});
     m_modeCb.setCurrentIndex(int(confMgr.mode()));
 
-    connect(&m_modeCb, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, &getIfaceAddr](int idx)
+    connect(&m_modeCb, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, getIfaceAddr](int idx)
     {
         m_dstAddrEdit.setText(getIfaceAddr(m_selectedIface, ConfigManager::Mode(idx)).toString());
     });
@@ -109,7 +107,7 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
         }
     });
 
-    connect(&m_ifaceMenu, &QMenu::triggered, this, [this, &getIfaceAddr](QAction *action)
+    connect(&m_ifaceMenu, &QMenu::triggered, this, [this, getIfaceAddr](QAction *action)
     {
         m_selectedIface = action->data().value<QNetworkInterface>();
         m_dstAddrEdit.setText(getIfaceAddr(m_selectedIface, ConfigManager::Mode(m_modeCb.currentIndex())).toString());

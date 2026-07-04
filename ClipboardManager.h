@@ -13,7 +13,7 @@ class ClipboardManager : public QObject
 {
     Q_OBJECT
   private:   
-    uint m_lastDataHash     { 0 };
+    size_t m_lastDataHash   { 0 };
     QClipboard* m_clipboard { QApplication::clipboard() };
   #ifdef Q_OS_MAC
     QTimer m_pollTimer;
@@ -26,7 +26,7 @@ class ClipboardManager : public QObject
     ClipboardManager(QObject* parent = nullptr);
 
   public slots:
-    void setData(const QByteArray& serializedData, bool emitDataChanged = false);
+    void setData(const QByteArray& serializedData);
 
   signals:
     void dataChanged(const QByteArray& serializedData);

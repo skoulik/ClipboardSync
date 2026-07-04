@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     }
 
     QObject::connect(&clbMgr, &ClipboardManager::dataChanged, &dgProc, &DatagramProcessor::sendDatagram);
-    QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, [&](const QByteArray& data){ clbMgr.setData(data); });
+    QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, &ClipboardManager::setData);
     QObject::connect(&wakeNotifier, &WakeNotifier::systemWoke, &confMgr, &ConfigManager::configChanged);
 
     emit confMgr.configChanged();

@@ -8,6 +8,7 @@ QByteArray ClipboardManager::serialize(const QMimeData* mime)
 {
     QByteArray result;
     QDataStream ds(&result, QIODevice::WriteOnly);
+    ds.setVersion(QDataStream::Qt_6_0);
     for(const QString& format : mime->formats())
     {
         if(!format.startsWith("text/")) continue;
@@ -19,6 +20,7 @@ QByteArray ClipboardManager::serialize(const QMimeData* mime)
 std::unique_ptr<QMimeData> ClipboardManager::deserialize(const QByteArray& serializedData)
 {
     QDataStream ds(serializedData);
+    ds.setVersion(QDataStream::Qt_6_0);
     auto mimeData = std::make_unique<QMimeData>();
     while(ds.status() == QDataStream::Ok)
     {
@@ -52,7 +54,7 @@ ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent)
             if(!mimeData) return;
 
             QByteArray data = serialize(mimeData);
-            uint newDataHash = qHash(data);
+            size_t newDataHash = qHash(data);
             if(newDataHash != m_lastDataHash)
             {
                 m_lastDataHash = newDataHash;
@@ -65,13 +67,12 @@ ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent)
   #endif
 }
 
-void ClipboardManager::setData(const QByteArray& data, bool emitDataChanged)
+void ClipboardManager::setData(const QByteArray& data)
 {
-    uint newDataHash = qHash(data);
+    size_t newDataHash = qHash(data);
     if(newDataHash == m_lastDataHash)
         return;
-    if(!emitDataChanged)
-        m_lastDataHash = newDataHash;
+    m_lastDataHash = newDataHash;
 
     auto mimeData = deserialize(data);
     if(mimeData)

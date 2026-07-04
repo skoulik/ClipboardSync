@@ -33,3 +33,7 @@ Run from Git Bash on the Windows machine:
 
 Sleep/wake regression check (the scenario WakeNotifier fixes): put the Mac to sleep with
 `pmset sleepnow` over SSH, wake it manually after ~10 minutes, then run `sync-test.sh`.
+
+The protocol sends each clipboard change as one datagram burst with no retransmit, so a single
+lost UDP packet fails one direction of one run (seen e.g. right after restarts, when the first
+unicast packet can race ARP resolution). Rerun a failed test once before investigating.

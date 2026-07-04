@@ -36,7 +36,7 @@ void CryptoEngine::encrypt(QByteArray &data, const QByteArray &key)
 
 bool CryptoEngine::decrypt(QByteArray &data, const QByteArray &key)
 {
-    if(data.isEmpty() || data.size() % AES_BLOCKLEN > 0)
+    if(data.size() < AES_BLOCKLEN * 2 || data.size() % AES_BLOCKLEN > 0)
         return false;
 
     const QByteArray iv = data.right(AES_BLOCKLEN);
@@ -47,7 +47,7 @@ bool CryptoEngine::decrypt(QByteArray &data, const QByteArray &key)
     AES_CBC_decrypt_buffer(&ctx, (uint8_t*)data.data(), data.size());
 
     uint8_t  pad = data.back();
-    if(!data.endsWith(QByteArray(pad, pad)))
+    if(pad < 1 || pad > AES_BLOCKLEN || !data.endsWith(QByteArray(pad, pad)))
         return false;
     data.chop(pad);
 
