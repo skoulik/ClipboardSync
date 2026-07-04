@@ -22,7 +22,7 @@ cmake --preset default
 cmake --build --preset release    # or: --preset debug
 ```
 
-Everything under `build/` plus leftover artifacts of the retired qmake build are gitignored — never commit them. Machine-specific settings belong in the `CMAKE_PREFIX_PATH` environment variable or an untracked `CMakeUserPresets.json`; tracked files (README, presets, CMakeLists.txt) must stay environment-agnostic — no hardcoded VS or Qt paths, no user-specific env var names.
+Everything under `build/` is gitignored — never commit it. Machine-specific settings belong in the `CMAKE_PREFIX_PATH` environment variable or an untracked `CMakeUserPresets.json`; tracked files (README, presets, CMakeLists.txt) must stay environment-agnostic — no hardcoded VS or Qt paths, no user-specific env var names.
 
 `thirdparty/tiny-AES-c` is a git submodule (run `git submodule update --init` after a fresh clone). Its `aes.c` is compiled directly into the app; the cipher variant is selected by the `AES256=1 ECB=0 CTR=0` compile definitions in CMakeLists.txt.
 

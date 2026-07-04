@@ -1,13 +1,2 @@
 build/
 CMakeUserPresets.json
-
-# legacy qmake/VS artifacts
-debug/
-release/
-Makefile*
-*.sln
-*.vcxproj*
-.qmake.stash
-.vs/
-clipboardsync_plugin_import.cpp
-ClipboardSync.si4project/
