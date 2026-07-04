@@ -1,8 +1,8 @@
 # ClipboardSync
 
-A small system-tray application that synchronizes clipboard contents between machines — or between user accounts on the same machine — over the local network. Copy text on one computer, paste it on another. There is no server and no pairing: every running instance configured with the same network settings and password shares the clipboard.
+A small system-tray application that synchronizes clipboard contents between machines over the local network. Copy text on one computer, paste it on another. There is no server and no pairing: every running instance configured with the same network settings and password shares the clipboard.
 
-Built with Qt 6 (C++17); developed and used primarily on Windows, with the platform-specific clipboard behavior of macOS also handled.
+Built with Qt 6 (C++17).
 
 ## Features
 
@@ -10,8 +10,6 @@ Built with Qt 6 (C++17); developed and used primarily on Windows, with the platf
 - Encrypted transport: AES-256-CBC with keys derived from a shared password via PBKDF2-SHA256
 - UDP delivery in Broadcast, Multicast or Unicast mode
 - Payloads larger than the configured datagram size are fragmented and reassembled
-- Tray icon reflects state (idle / transmitting / disabled); syncing can be paused from the tray menu
-- Settings persist across restarts
 
 ## Usage
 
@@ -24,12 +22,6 @@ Run ClipboardSync on every machine that should share the clipboard, then right-c
 - **Password** — the shared secret; encryption keys are derived from it
 
 All peers must use the same mode, address, port and password (the port also salts the password hash, so a port change requires re-entering the password everywhere). The *Disable* menu entry pauses both sending and receiving.
-
-## How it works
-
-A clipboard change is serialized (text formats only), encrypted, and sent as one or more UDP datagrams: a 12-byte header followed by the ciphertext and a random IV. The master key is PBKDF2-SHA256 of the password; each datagram's key is additionally bound to its header, which acts as associated data. Receivers reassemble fragments (incomplete transfers are dropped after a 10 s idle timeout), decrypt, and write the result back to the clipboard; hashing prevents echo loops.
-
-Datagrams are encrypted, but there is no cryptographic authentication beyond key binding and padding checks — use it on networks you trust.
 
 ## Build
 
