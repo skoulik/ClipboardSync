@@ -15,11 +15,21 @@ qt_add_executable(ClipboardSync
     ConfigManager.h      ConfigManager.cpp
     CryptoEngine.h       CryptoEngine.cpp
     DatagramProcessor.h  DatagramProcessor.cpp
+    WakeNotifier.h
     thirdparty/tiny-AES-c/aes.c
     resources.qrc
 )
 
-target_compile_definitions(ClipboardSync PRIVATE AES256=1 ECB=0 CTR=0)
+if(APPLE)
+    enable_language(OBJCXX)
+    target_sources(ClipboardSync PRIVATE WakeNotifier.mm)
+else()
+    target_sources(ClipboardSync PRIVATE WakeNotifier.cpp)
+endif()
+
+# Not target-wide: CTR collides with macOS SDK headers
+set_source_files_properties(CryptoEngine.cpp thirdparty/tiny-AES-c/aes.c
+    PROPERTIES COMPILE_DEFINITIONS "AES256=1;ECB=0;CTR=0")
 target_link_libraries(ClipboardSync PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network)
 
 # Qt libs built with clang-cl reference clang_rt.builtins, which is not on MSVC's default
