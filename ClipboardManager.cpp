@@ -1,5 +1,6 @@
 #include "ClipboardManager.h"
 #include <QDataStream>
+#include <QIODevice>
 #include <QMimeData>
 
 

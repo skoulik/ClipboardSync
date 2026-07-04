@@ -11,30 +11,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-ClipboardSync is a Qt Widgets system-tray app (C++17) that synchronizes clipboard contents between machines/user accounts over LAN via encrypted UDP. All source files live in the repository root; the qmake project file `ClipboardSync.pro` is the source of truth for the build.
+ClipboardSync is a Qt Widgets system-tray app (C++17, Qt 6) that synchronizes clipboard contents between machines/user accounts over LAN via encrypted UDP. All source files live in the repository root; `CMakeLists.txt` is the source of truth for the build.
 
 ## Build
 
-The tracked build entry point is `build.cmd`, which generates a Visual Studio project from the .pro file:
+CMake with the tracked `CMakePresets.json` (Ninja Multi-Config, output under `build/`); `CMAKE_PREFIX_PATH` must point at the Qt installation prefix. On this machine, enter the VS dev environment first (see toolchain notes below):
 
 ```
-build.cmd    # runs vcvarsall amd64, then: qmake -tp vc -spec win32-clang-msvc (ClangCL toolset)
+cmake --preset default
+cmake --build --preset release    # or: --preset debug
 ```
 
-It requires two environment variables: `VS160COMNTOOLS` (Visual Studio 2019) and `QT2020_64` (Qt installation root). Build the result with `msbuild ClipboardSync.sln` or from the VS IDE. A plain `qmake ClipboardSync.pro` + make/nmake also works.
+Everything under `build/` plus leftover artifacts of the retired qmake build are gitignored — never commit them. Machine-specific settings belong in the `CMAKE_PREFIX_PATH` environment variable or an untracked `CMakeUserPresets.json`; tracked files (README, presets, CMakeLists.txt) must stay environment-agnostic — no hardcoded VS or Qt paths, no user-specific env var names.
 
-Generated artifacts (`ClipboardSync.sln`, `*.vcxproj*`, `Makefile`, `debug/`, `release/`, `.qmake.stash`, `.vs/`, `ClipboardSync.si4project/`) are untracked — never commit them, and never edit the .vcxproj directly; change `ClipboardSync.pro` and regenerate.
-
-`thirdparty/tiny-AES-c` is a git submodule (run `git submodule update --init` after a fresh clone). Its `aes.c` is compiled directly into the app; the cipher variant is selected by `DEFINES += AES256=1 ECB=0 CTR=0` in the .pro file.
+`thirdparty/tiny-AES-c` is a git submodule (run `git submodule update --init` after a fresh clone). Its `aes.c` is compiled directly into the app; the cipher variant is selected by the `AES256=1 ECB=0 CTR=0` compile definitions in CMakeLists.txt.
 
 There is no test suite and no linter configured.
 
-### Toolchain for the Qt6/CMake port (verified 2026-07)
+### Local toolchain notes (verified 2026-07)
 
 - Development targets **VS 2026 Community Insiders** (v18.x, prerelease channel; VS 2022 and 2019 are also installed). `vswhere.exe` (at its fixed location `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\`) lists VS 2026 **only with `-prerelease`**.
 - `cmake` and `ninja` are **not on PATH**; the VS-bundled ones become available after entering the dev environment — either the "x64 Native Tools Command Prompt for VS 2026" or `call "<VS>\Common7\Tools\VsDevCmd.bat" -arch=amd64`. Verified inside it: MSVC `cl` 19.51 (x64), CMake 4.2 (4.x — no pre-3.5 policy compat), Ninja 1.13. The Insiders `VsDevCmd.bat` prints a harmless `'vswhere.exe' is not recognized` warning.
-- Qt 6.12 **static** build at `%QT2026%\amd64` (env var `QT2026`), configured with `static` + `static_runtime` → link with the static CRT (`/MT`, `MultiThreaded*` in CMake terms); `debug_and_release` libs are present.
-- Build instructions in tracked files (README, presets) must stay environment-agnostic: no hardcoded VS or Qt paths and no user-specific env var names; machine-specific settings belong in the standard `CMAKE_PREFIX_PATH` environment variable or an untracked `CMakeUserPresets.json`.
+- Qt 6.12 **static** build at `%QT2026%\amd64` (env var `QT2026`), configured with `static` + `static_runtime` → link with the static CRT (`/MT`, `MultiThreaded*` in CMake terms); `debug_and_release` libs are present. Set `CMAKE_PREFIX_PATH=%QT2026%\amd64` before configuring.
+- The Qt libs were compiled with clang-cl (mkspec `win32-clang-msvc`) and reference `clang_rt.builtins-x86_64.lib`; CMakeLists.txt locates it in the VS-bundled Clang toolchain via `VCToolsInstallDir`, so the app itself builds with plain MSVC `cl`.
 
 ## Architecture
 
