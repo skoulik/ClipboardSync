@@ -23,6 +23,10 @@ Run from Git Bash on the Windows machine:
 
 - `sync-test.sh` — bidirectional sync check with random tokens; exits non-zero on failure.
   Overwrites the clipboard on both machines.
+- `set-mode.sh broadcast|unicast|multicast` — switch both instances to the given operating
+  mode by rewriting their stored settings (Windows registry / macOS defaults; port and password
+  hash untouched) and force-restarting them.
+- `test-all-modes.sh` — `sync-test.sh` in each of the three modes; leaves multicast configured.
 - `status.sh` — processes, UDP sockets and multicast group membership on both machines.
 - `remote-build.sh` — configure + build the Release app on the Mac's repo clone.
 - `remote-restart.sh` — relaunch the app in the Mac's GUI session and show its sockets.
