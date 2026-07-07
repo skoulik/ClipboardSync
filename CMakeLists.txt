@@ -10,6 +10,7 @@ set(CMAKE_AUTORCC ON)
 
 qt_add_executable(ClipboardSync
     main.cpp
+    AutoStart.h          AutoStart.cpp
     ClipboardManager.h   ClipboardManager.cpp
     ConfigDialog.h       ConfigDialog.cpp
     ConfigManager.h      ConfigManager.cpp

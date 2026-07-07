@@ -9,6 +9,8 @@
 #include <QSpinBox>
 #include <QDialogButtonBox>
 #include <QComboBox>
+#include <QGroupBox>
+#include <QCheckBox>
 #include <QNetworkInterface>
 
 
@@ -16,6 +18,7 @@ class ConfigDialog : public QDialog
 {
     Q_OBJECT
   private:
+    QGroupBox m_networkGroup     { "Network", this };
     QToolButton m_ifaceBtn       { this };
     QMenu m_ifaceMenu            { this };
     QComboBox m_modeCb           { this };
@@ -23,6 +26,7 @@ class ConfigDialog : public QDialog
     QSpinBox m_portSb            { this };
     QSpinBox m_mtuSb             { this };
     QLineEdit m_passEdit         { this };
+    QCheckBox m_autoStartCb      { "Automatically start at login", this };
     QDialogButtonBox m_buttonBox { QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this };
     QNetworkInterface m_selectedIface;
 

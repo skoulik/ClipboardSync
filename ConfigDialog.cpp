@@ -1,4 +1,5 @@
 #include "ConfigDialog.h"
+#include "AutoStart.h"
 #include <QAction>
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -126,7 +127,9 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
             return;
         }
 
-        if(m_passEdit.text().isEmpty())
+        bool keepPass = m_passEdit.text().isEmpty() && !confMgr.passHash().isEmpty() &&
+                        m_portSb.value() == confMgr.port();
+        if(m_passEdit.text().isEmpty() && !keepPass)
         {
             m_passEdit.setFocus();
             return;
@@ -138,17 +141,24 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
           confMgr.setAddr(QHostAddress(m_dstAddrEdit.text()));
           confMgr.setPort(m_portSb.value());
           confMgr.setMtu(m_mtuSb.value());
-          confMgr.setPass(m_passEdit.text(), m_portSb.value()); // The port number serves as the salt for the pass hash
+          if(!keepPass)
+              confMgr.setPass(m_passEdit.text(), m_portSb.value()); // The port number serves as the salt for the pass hash
         confMgr.endSeqChange();
+
+        AutoStart::setEnabled(m_autoStartCb.isChecked());
 
         accept();
     });
 
     m_passEdit.setEchoMode(QLineEdit::Password);
+    if(!confMgr.passHash().isEmpty())
+        m_passEdit.setPlaceholderText("(unchanged)");
+
+    m_autoStartCb.setChecked(AutoStart::enabled());
 
     connect(&m_buttonBox, &QDialogButtonBox::rejected, this, &ConfigDialog::reject);
 
-    QFormLayout *formLayout = new QFormLayout;
+    QFormLayout *formLayout = new QFormLayout(&m_networkGroup);
     formLayout->addRow("Network Interface", &m_ifaceBtn);
     formLayout->addRow("Operating Mode", &m_modeCb);
     formLayout->addRow("Destination Address", &m_dstAddrEdit);
@@ -157,7 +167,8 @@ ConfigDialog::ConfigDialog(ConfigManager& confMgr, QWidget *parent)
     formLayout->addRow("Password", &m_passEdit);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->addLayout(formLayout);
+    mainLayout->addWidget(&m_networkGroup);
+    mainLayout->addWidget(&m_autoStartCb);
     mainLayout->addWidget(&m_buttonBox);
 }
 
