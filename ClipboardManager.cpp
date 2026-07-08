@@ -35,7 +35,8 @@ std::unique_ptr<QMimeData> ClipboardManager::deserialize(const QByteArray& seria
     return mimeData;
 }
 
-ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent)
+ClipboardManager::ClipboardManager(const ConfigManager& confMgr, QObject* parent)
+    : QObject(parent), m_confMgr(confMgr)
 {
     const QMimeData* mimeData = m_clipboard->mimeData();
     if(mimeData)
@@ -48,7 +49,7 @@ ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent)
   #endif
         [this]
         {
-            if(signalsBlocked()) return;
+            if(m_confMgr.disabled()) return;
 
             const QMimeData* mimeData = m_clipboard->mimeData();
             if(!mimeData) return;

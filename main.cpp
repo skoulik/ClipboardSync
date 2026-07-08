@@ -21,17 +21,18 @@ int main(int argc, char *argv[])
 
     ConfigManager confMgr;
     DatagramProcessor dgProc(confMgr);
-    ClipboardManager clbMgr;
+    ClipboardManager clbMgr(confMgr);
     WakeNotifier wakeNotifier;
 
     enum { icnIdle = 0, icnTransmitting, icnDisabled };
     QIcon icons[] = {QIcon(":/TrayIcon.png"), QIcon(":/TrayIconTransmitting.png"), QIcon(":/TrayIconDisabled.png")};
+    auto idleIcon = [&]{ return icons[confMgr.disabled() ? icnDisabled : icnIdle]; };
 
     QSystemTrayIcon trayIcon;
     QMenu trayMenu;
     if(QSystemTrayIcon::isSystemTrayAvailable())
     {
-        trayIcon.setIcon(icons[icnIdle]);
+        trayIcon.setIcon(idleIcon());
         trayIcon.setToolTip(app.applicationName());
 
         QObject::connect(trayMenu.addAction("Config..."), &QAction::triggered, &app, [&]
@@ -43,8 +44,13 @@ int main(int argc, char *argv[])
         disable->setCheckable(true);
         QObject::connect(disable, &QAction::toggled, &app, [&](bool disabled)
         {
-            [=](auto&... o) { (o.blockSignals(disabled), ...); }(dgProc, clbMgr);
-            trayIcon.setIcon(icons[disabled ? icnDisabled : icnIdle]);
+            confMgr.setDisabled(disabled);
+        });
+
+        QObject::connect(&confMgr, &ConfigManager::configChanged, &app, [&, disable]
+        {
+            disable->setChecked(confMgr.disabled());
+            trayIcon.setIcon(idleIcon());
         });
 
         QObject::connect(trayMenu.addAction("Quit"), &QAction::triggered, &app, &QCoreApplication::quit);
@@ -54,7 +60,7 @@ int main(int argc, char *argv[])
             if(transmitting)
                 trayIcon.setIcon(icons[icnTransmitting]);
             else
-                QTimer::singleShot(100, [&]{ trayIcon.setIcon(icons[icnIdle]); });
+                QTimer::singleShot(100, [&]{ trayIcon.setIcon(idleIcon()); });
         });
 
         trayIcon.setContextMenu(&trayMenu);

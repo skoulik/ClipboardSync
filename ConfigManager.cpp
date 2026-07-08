@@ -13,6 +13,7 @@ ConfigManager::ConfigManager(QObject* parent)
     m_port      = settings.value("port", m_port).toUInt();
     m_mtu       = settings.value("mtu", m_mtu).toUInt();
     m_passHash  = settings.value("pass", m_passHash).toByteArray();
+    m_disabled  = settings.value("disabled", m_disabled).toBool();
 }
 
 ConfigManager::~ConfigManager()
@@ -24,6 +25,7 @@ ConfigManager::~ConfigManager()
     settings.setValue("port",      m_port);
     settings.setValue("mtu",       m_mtu);
     settings.setValue("pass",      m_passHash);
+    settings.setValue("disabled",  m_disabled);
 }
 
 void ConfigManager::beginSeqChange()
@@ -80,5 +82,10 @@ bool ConfigManager::setPass(const QString& pass, quint16 slt)
     auto salt = CryptoEngine::deriveKey(QByteArray((const char *)&slt, sizeof(slt)), {});
     auto hash = CryptoEngine::deriveKey(pass, salt);
     return setter(m_passHash, hash);
+}
+
+bool ConfigManager::setDisabled(bool disabled)
+{
+    return setter(m_disabled, disabled);
 }
 

@@ -61,7 +61,13 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
 
     connect(&confMgr, &ConfigManager::configChanged, this, [this]
     {
-        m_socketRx.close();
+        m_socketRx.close(); // also drops any multicast membership — no explicit leave needed
+        if(m_confMgr.disabled())
+        {
+            m_socketTx.close();
+            return;
+        }
+
         switch(m_confMgr.mode())
         {
             case ConfigManager::Mode::Broadcast:
@@ -105,12 +111,6 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
     {
         while(m_socketRx.hasPendingDatagrams())
         {
-            if(signalsBlocked())
-            {
-                m_socketRx.readDatagram(nullptr, 0); // discard
-                continue;
-            }
-
             QByteArray data;
             data.resize(static_cast<int>(m_socketRx.pendingDatagramSize()));
             QHostAddress sender;
@@ -154,6 +154,7 @@ DatagramProcessor::DatagramProcessor(const ConfigManager& confMgr, QObject *pare
 
 bool DatagramProcessor::sendDatagram(const QByteArray& payload)
 {
+    if(m_confMgr.disabled()) return false;
     emit transmitStateChanged(true);
     auto atExit = std::shared_ptr<void>(nullptr, [=](...){ emit transmitStateChanged(false); });
                                              // IP4 UDP                          pad   iv

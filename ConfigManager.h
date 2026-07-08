@@ -25,6 +25,7 @@ class ConfigManager : public QObject
     quint16 port() const { return m_port; }
     quint16 mtu() const { return m_mtu; }
     QByteArray passHash() const { return m_passHash; }
+    bool disabled() const { return m_disabled; }
 
     void beginSeqChange();
     void endSeqChange();
@@ -34,6 +35,7 @@ class ConfigManager : public QObject
     bool setPort(quint16 port);
     bool setMtu(quint16 mtu);
     bool setPass(const QString& pass, quint16 salt);
+    bool setDisabled(bool disabled);
 
   signals:
     void configChanged();
@@ -45,8 +47,9 @@ class ConfigManager : public QObject
     quint16 m_port           { 19211 };
     quint16 m_mtu            { 1500 };
     QByteArray m_passHash;
-    bool m_seqChanging       { false };
     bool m_changed           { false };
+    bool m_disabled          { false };
+    bool m_seqChanging       { false };
 
     template <typename T> bool setter(T& dst, const T& src);
 };

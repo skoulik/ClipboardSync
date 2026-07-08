@@ -1,6 +1,7 @@
 #ifndef CLIPBOARDMANAGER_H
 #define CLIPBOARDMANAGER_H
 
+#include "ConfigManager.h"
 #include <QObject>
 #include <QApplication>
 #include <QClipboard>
@@ -12,7 +13,8 @@
 class ClipboardManager : public QObject
 {
     Q_OBJECT
-  private:   
+  private:
+    const ConfigManager& m_confMgr;
     size_t m_lastDataHash   { 0 };
     QClipboard* m_clipboard { QApplication::clipboard() };
   #ifdef Q_OS_MAC
@@ -23,7 +25,7 @@ class ClipboardManager : public QObject
     static std::unique_ptr<QMimeData> deserialize(const QByteArray& serializedData);
 
   public:
-    ClipboardManager(QObject* parent = nullptr);
+    ClipboardManager(const ConfigManager& confMgr, QObject* parent = nullptr);
 
   public slots:
     void setData(const QByteArray& serializedData);
