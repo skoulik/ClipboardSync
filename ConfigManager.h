@@ -17,7 +17,6 @@ class ConfigManager : public QObject
     };
 
     ConfigManager(QObject* parent = nullptr);
-    ~ConfigManager();
 
     const QString& ifaceName() const { return m_ifaceName; }
     Mode mode() const { return m_mode; }
@@ -51,6 +50,7 @@ class ConfigManager : public QObject
     bool m_disabled          { false };
     bool m_seqChanging       { false };
 
+    void save();
     template <typename T> bool setter(T& dst, const T& src);
 };
 

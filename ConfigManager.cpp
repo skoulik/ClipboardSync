@@ -16,7 +16,7 @@ ConfigManager::ConfigManager(QObject* parent)
     m_disabled  = settings.value("disabled", m_disabled).toBool();
 }
 
-ConfigManager::~ConfigManager()
+void ConfigManager::save()
 {
     QSettings settings;
     settings.setValue("ifaceName", m_ifaceName);
@@ -38,7 +38,10 @@ void ConfigManager::endSeqChange()
 {
     m_seqChanging = false;
     if(m_changed)
+    {
+        save();
         emit configChanged();
+    }
 }
 
 template <typename T> bool ConfigManager::setter(T& dst, const T& src)
@@ -47,7 +50,10 @@ template <typename T> bool ConfigManager::setter(T& dst, const T& src)
         return false;
     dst = src;
     if(!m_seqChanging)
+    {
+        save();
         emit configChanged();
+    }
     m_changed = m_seqChanging;
     return true;
 }
