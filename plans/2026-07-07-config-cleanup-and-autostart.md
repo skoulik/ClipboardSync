@@ -3,7 +3,8 @@
 Status: **implemented** (commit 119c3c2, 2026-07-07). Review found one bug beyond the plan:
 the `QGroupBox` member must be declared before the widgets it reparents, or `~QObject`
 double-destroys them on dialog close. The checkbox label shipped as "Automatically start
-at login". macOS backend still compile- and runtime-unverified (Windows-only machine).
+at login". Windows autostart verified manually (2026-07-08). macOS backend still
+compile- and runtime-unverified (Windows-only machine).
 
 ## Goals
 
