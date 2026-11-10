@@ -23,8 +23,10 @@ qt_add_executable(ClipboardSync
 
 if(APPLE)
     enable_language(OBJCXX)
-    target_sources(ClipboardSync PRIVATE WakeNotifier.mm)
+    target_sources(ClipboardSync PRIVATE WakeNotifier.mm icon/ClipboardSync.icns)
+    set_source_files_properties(icon/ClipboardSync.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     set_target_properties(ClipboardSync PROPERTIES
+        MACOSX_BUNDLE_ICON_FILE            ClipboardSync.icns
         MACOSX_BUNDLE_INFO_PLIST           ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
         MACOSX_BUNDLE_GUI_IDENTIFIER       com.skoulik.clipboardsync
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}

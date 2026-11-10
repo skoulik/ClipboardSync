@@ -1,7 +1,10 @@
 <RCC>
     <qresource>
         <file>TrayIcon.png</file>
+        <file>TrayIcon@2x.png</file>
         <file>TrayIconDisabled.png</file>
+        <file>TrayIconDisabled@2x.png</file>
         <file>TrayIconTransmitting.png</file>
+        <file>TrayIconTransmitting@2x.png</file>
     </qresource>
 </RCC>

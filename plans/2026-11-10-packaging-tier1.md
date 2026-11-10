@@ -59,9 +59,12 @@ the README says so, and CLAUDE.md's wire-format paragraph names the bump.
 
 **The tray design redrawn as vector art** (Q4, Sergei: A): the same yellow clipboard, dark
 clip and green sync arrows, drawn at 1024 px and checked at 16, 32 and 48. Rendered both as a
-bare clipboard and on a macOS-style rounded tile, at real sizes, for him to choose from. The
-tray PNGs can later be regenerated from the same source; not in this plan. The `.ico`
-and `.icns` are generated once and committed, so the build needs no image tooling. Windows gets
+bare clipboard and on a macOS-style rounded tile, at real sizes, for him to choose from:
+**the bare clipboard for Windows, the clipboard on a navy tile for macOS** (Sergei,
+2026-11-10). The three tray states (idle, transmitting, disabled) are regenerated from the
+same source at 32 and 64 px (Sergei, 2026-11-10): today's 32 px PNGs are upscaled, and blur,
+in the Retina menu bar. The `.ico`, `.icns` and tray PNGs are generated once and committed,
+so the build needs no image tooling. Windows gets
 it through a `.rc` (beside the `VERSIONINFO`), macOS through `MACOSX_BUNDLE_ICON_FILE`.
 
 ### 3. CI build
