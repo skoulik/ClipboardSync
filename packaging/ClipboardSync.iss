@@ -2,7 +2,7 @@
   #define MyAppVersion "0.0.0"
 #endif
 #ifndef SourceDir
-  #define SourceDir "..\build\deploy"
+  #define SourceDir "..\build\default\Release"
 #endif
 
 #define MyAppName "Clipboard Sync"
@@ -36,7 +36,7 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 
 [Files]
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion
 
 [Icons]

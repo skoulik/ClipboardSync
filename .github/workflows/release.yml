@@ -10,7 +10,7 @@ permissions:
 
 env:
   QT_VERSION: "6.12.0"
-  AQT_SOURCE: git+https://github.com/miurahr/aqtinstall.git@5a49f2b391ae8ee1d3c0dd87f8b33c1d49a4deb7
+  QTBASE_SHA256: 0529901575c413e34ded504eeda177c4a6dfd0dff1e39ed52c811dc5204b43c7
   APP_IDENTITY: 59969450EC2C4ED8F56CB8514CCF70ED3A15E8F8
 
 jobs:
@@ -32,33 +32,49 @@ jobs:
   windows:
     needs: version
     runs-on: windows-2025
+    env:
+      QT_CONFIGURE: -static -static-runtime -release
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: jurplel/install-qt-action@v4
+      - id: qt
+        uses: actions/cache/restore@v5
         with:
-          version: ${{ env.QT_VERSION }}
-          arch: win64_msvc2022_64
-          aqtsource: ${{ env.AQT_SOURCE }}
-          cache: true
+          path: ${{ runner.temp }}\qt
+          key: qtbase-${{ env.QT_VERSION }} ${{ env.QT_CONFIGURE }}
+      - name: Static Qt
+        if: steps.qt.outputs.cache-hit != 'true'
+        run: |
+          $zip = "$env:RUNNER_TEMP\qtbase.zip"
+          Invoke-WebRequest "https://download.qt.io/official_releases/qt/$($env:QT_VERSION -replace '\.\d+$')/$env:QT_VERSION/submodules/qtbase-everywhere-src-$env:QT_VERSION.zip" -OutFile $zip
+          if ((Get-FileHash $zip).Hash -ne $env:QTBASE_SHA256) { throw "qtbase source: checksum mismatch" }
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          Import-Module "$vs\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+          Enter-VsDevShell -VsInstallPath $vs -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
+          $PSNativeCommandUseErrorActionPreference = $true
+          7z x -y "-o$env:RUNNER_TEMP" $zip | Out-Null
+          New-Item -ItemType Directory "$env:RUNNER_TEMP\qtbuild" | Out-Null
+          Set-Location "$env:RUNNER_TEMP\qtbuild"
+          & "$env:RUNNER_TEMP\qtbase-everywhere-src-$env:QT_VERSION\configure.bat" -prefix "$env:RUNNER_TEMP\qt" $env:QT_CONFIGURE.Split(' ')
+          cmake --build . --parallel
+          cmake --install .
+      - if: steps.qt.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ runner.temp }}\qt
+          key: ${{ steps.qt.outputs.cache-primary-key }}
       - name: Build
         run: |
-          cmake -S . -B build -A x64
+          cmake -S . -B build -A x64 -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP\qt"
           cmake --build build --config Release
-      - name: Deploy
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory deploy | Out-Null
-          Copy-Item build\Release\ClipboardSync.exe deploy\
-          windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw --no-compiler-runtime deploy\ClipboardSync.exe
           $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          $crt = Get-ChildItem "$vs\VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT" -Directory | Sort-Object FullName | Select-Object -Last 1
-          if (-not $crt) { throw "MSVC runtime not found under $vs" }
-          Copy-Item "$($crt.FullName)\*.dll" deploy\
-          Get-ChildItem -Recurse deploy | Select-Object -ExpandProperty FullName
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" | Select-Object -Last 1
+          $dlls = & $dumpbin /dependents build\Release\ClipboardSync.exe | Where-Object { $_ -match '^\s+\S+\.dll$' } | ForEach-Object { $_.Trim() }
+          $dlls
+          if ($dlls -match '^(Qt6|vcruntime|msvcp|concrt|ucrtbase|api-ms-win-crt)') { throw "not a static build: it imports $($dlls -join ', ')" }
       - name: Installer
-        run: iscc /DMyAppVersion=${{ needs.version.outputs.version }} /DSourceDir=..\deploy packaging\ClipboardSync.iss
+        run: iscc /DMyAppVersion=${{ needs.version.outputs.version }} /DSourceDir=..\build\Release packaging\ClipboardSync.iss
       - name: Install, run, uninstall
         shell: pwsh
         run: |

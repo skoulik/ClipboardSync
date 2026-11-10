@@ -47,4 +47,4 @@ The AES implementation is [tiny-AES-c](https://github.com/kokke/tiny-AES-c), com
 
 ## License
 
-Public domain — see [LICENSE](LICENSE) (Unlicense). tiny-AES-c is public domain as well. The installers include the [Qt](https://www.qt.io) 6.12 libraries, used under the GNU LGPL v3, whose text is installed alongside them (`licenses` in the install folder on Windows, `Contents/Resources/licenses` in the macOS app); Qt's source is at [download.qt.io](https://download.qt.io/official_releases/qt/6.12/).
+Public domain — see [LICENSE](LICENSE) (Unlicense). tiny-AES-c is public domain as well. The installers include the [Qt](https://www.qt.io) 6.12 libraries, used under the GNU LGPL v3 — statically linked into the Windows exe, as frameworks inside the macOS app. The license text is installed with them (`licenses` in the install folder on Windows, `Contents/Resources/licenses` in the macOS app); Qt's source is at [download.qt.io](https://download.qt.io/official_releases/qt/6.12/), and this repository's source is what relinking the app against a modified Qt needs.
