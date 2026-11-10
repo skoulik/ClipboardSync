@@ -14,6 +14,10 @@ permissions:
 
 env:
   QT_VERSION: "6.12.0"
+  # Windows only: aqtinstall 3.3.0, the latest release, predates the per-compiler layout Qt's
+  # Windows repository has from 6.11 on; its master handles it. Back to a release once 3.3.1 ships.
+  AQT_SOURCE: git+https://github.com/miurahr/aqtinstall.git@5a49f2b391ae8ee1d3c0dd87f8b33c1d49a4deb7
+  APP_IDENTITY: 59969450EC2C4ED8F56CB8514CCF70ED3A15E8F8  # Developer ID Application, to 2027-12-09
 
 jobs:
   version:
@@ -42,6 +46,7 @@ jobs:
         with:
           version: ${{ env.QT_VERSION }}
           arch: win64_msvc2022_64
+          aqtsource: ${{ env.AQT_SOURCE }}
           cache: true
       - name: Build
         run: |
@@ -60,14 +65,36 @@ jobs:
           if (-not $crt) { throw "MSVC runtime not found under $vs" }
           Copy-Item "$($crt.FullName)\*.dll" deploy\
           Get-ChildItem -Recurse deploy | Select-Object -ExpandProperty FullName
+      - name: Installer
+        run: iscc /DMyAppVersion=${{ needs.version.outputs.version }} /DSourceDir=..\deploy packaging\ClipboardSync.iss
+      - name: Install, run, uninstall
+        # Per-user and silent. The app is left running so the uninstaller has to stop it, and
+        # an autostart entry is planted so the uninstaller has to remove it.
+        shell: pwsh
+        run: |
+          $setup = Get-Item build\installer\*.exe
+          Start-Process $setup -Wait -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER'
+          $dir = "$env:LOCALAPPDATA\Programs\Clipboard Sync"
+          if (-not (Test-Path "$dir\ClipboardSync.exe")) { throw "not installed in $dir" }
+          $run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+          New-ItemProperty $run -Name 'Clipboard Sync' -Value "`"$dir\ClipboardSync.exe`"" -Force | Out-Null
+          $app = Start-Process "$dir\ClipboardSync.exe" -PassThru
+          Start-Sleep 5
+          if ($app.HasExited) { throw "the installed app exited with $($app.ExitCode)" }
+          Start-Process "$dir\unins000.exe" -Wait -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
+          Start-Sleep 3
+          if (Test-Path "$dir\ClipboardSync.exe") { throw "still installed" }
+          if ((Get-ItemProperty $run).'Clipboard Sync') { throw "the autostart entry survived" }
       - uses: actions/upload-artifact@v6
         with:
           name: windows
-          path: deploy
+          path: build/installer/*.exe
 
   macos:
     needs: version
     runs-on: macos-26
+    env:
+      DMG: ClipboardSync-${{ needs.version.outputs.version }}-macos.dmg
     steps:
       - uses: actions/checkout@v6
         with:
@@ -80,13 +107,72 @@ jobs:
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
           cmake --build build
-      - name: Deploy
-        run: |
-          macdeployqt build/ClipboardSync.app
           lipo -info build/ClipboardSync.app/Contents/MacOS/ClipboardSync
-          plutil -p build/ClipboardSync.app/Contents/Info.plist
-          ditto -c -k --keepParent build/ClipboardSync.app ClipboardSync-macos.zip
+      - name: Keychain with the signing identity
+        env:
+          P12: ${{ secrets.MACOS_CERT_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 7200 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/signing.p12" -k "$KEYCHAIN" -P "$P12_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/signing.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          echo "MACOS_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+      - name: Deploy, sign, DMG
+        run: |
+          macdeployqt build/ClipboardSync.app -sign-for-notarization="$APP_IDENTITY"
+          codesign --verify --deep --strict --verbose=2 build/ClipboardSync.app
+          mkdir dmg
+          ditto build/ClipboardSync.app dmg/ClipboardSync.app
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "Clipboard Sync" -srcfolder dmg -ov -format UDZO "$DMG"
+          codesign --sign "$APP_IDENTITY" --timestamp "$DMG"
+      - name: Notarise, staple, assess
+        env:
+          P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          echo "$P8" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          xcrun notarytool submit "$DMG" --key "$RUNNER_TEMP/AuthKey.p8" --key-id "$KEY_ID" \
+            --issuer "$ISSUER_ID" --wait --timeout 60m --output-format json | tee "$RUNNER_TEMP/notary.json"
+          status=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['status'])" "$RUNNER_TEMP/notary.json")
+          if [ "$status" != "Accepted" ]; then
+            id=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['id'])" "$RUNNER_TEMP/notary.json")
+            xcrun notarytool log "$id" --key "$RUNNER_TEMP/AuthKey.p8" --key-id "$KEY_ID" --issuer "$ISSUER_ID"
+            echo "::error::notarisation: $status"; exit 1
+          fi
+          xcrun stapler staple "$DMG"
+          spctl --assess --type open --context context:primary-signature -vvv "$DMG"
       - uses: actions/upload-artifact@v6
         with:
           name: macos
-          path: ClipboardSync-macos.zip
+          path: ${{ env.DMG }}
+      - name: Clean up
+        if: always()
+        run: |
+          [ -n "$MACOS_KEYCHAIN" ] && security delete-keychain "$MACOS_KEYCHAIN" || true
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: [version, windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist && sha256sum * > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --title "Clipboard Sync ${{ needs.version.outputs.version }}" \
+            --notes "Draft: to be installed and checked on both machines before publishing." ./*
