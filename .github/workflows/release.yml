@@ -1,0 +1,92 @@
+name: Release
+
+# A `v*` tag builds both platforms and makes a DRAFT release, published by hand once the
+# installers are checked on both machines. A manual run builds without releasing.
+# Qt is the official dynamic build; the local builds use a static one, see CLAUDE.md.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  QT_VERSION: "6.12.0"
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: v
+        run: |
+          v=$(sed -nE 's/^project\(ClipboardSync VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)
+          [ -n "$v" ] || { echo "::error::no VERSION in CMakeLists.txt's project()"; exit 1; }
+          if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME#v}" != "$v" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} disagrees with CMakeLists.txt's version $v"; exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: version
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          cache: true
+      - name: Build
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          cmake --build build --config Release
+      - name: Deploy
+        # The MSVC runtime goes app-local: vc_redist.x64.exe needs admin, which a per-user
+        # install does not have.
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory deploy | Out-Null
+          Copy-Item build\Release\ClipboardSync.exe deploy\
+          windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw --no-compiler-runtime deploy\ClipboardSync.exe
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $crt = Get-ChildItem "$vs\VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT" -Directory | Sort-Object FullName | Select-Object -Last 1
+          if (-not $crt) { throw "MSVC runtime not found under $vs" }
+          Copy-Item "$($crt.FullName)\*.dll" deploy\
+          Get-ChildItem -Recurse deploy | Select-Object -ExpandProperty FullName
+      - uses: actions/upload-artifact@v6
+        with:
+          name: windows
+          path: deploy
+
+  macos:
+    needs: version
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          cache: true
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          cmake --build build
+      - name: Deploy
+        run: |
+          macdeployqt build/ClipboardSync.app
+          lipo -info build/ClipboardSync.app/Contents/MacOS/ClipboardSync
+          plutil -p build/ClipboardSync.app/Contents/Info.plist
+          ditto -c -k --keepParent build/ClipboardSync.app ClipboardSync-macos.zip
+      - uses: actions/upload-artifact@v6
+        with:
+          name: macos
+          path: ClipboardSync-macos.zip
