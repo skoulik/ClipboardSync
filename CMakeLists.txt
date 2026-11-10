@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(ClipboardSync LANGUAGES CXX C)
+project(ClipboardSync VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -25,11 +25,18 @@ if(APPLE)
     enable_language(OBJCXX)
     target_sources(ClipboardSync PRIVATE WakeNotifier.mm)
     set_target_properties(ClipboardSync PROPERTIES
-        MACOSX_BUNDLE_INFO_PLIST     ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
-        MACOSX_BUNDLE_GUI_IDENTIFIER com.skoulik.clipboardsync
+        MACOSX_BUNDLE_INFO_PLIST           ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
+        MACOSX_BUNDLE_GUI_IDENTIFIER       com.skoulik.clipboardsync
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+        MACOSX_BUNDLE_BUNDLE_VERSION       ${PROJECT_VERSION}
     )
 else()
     target_sources(ClipboardSync PRIVATE WakeNotifier.cpp)
+endif()
+
+if(WIN32)
+    configure_file(ClipboardSync.rc.in ClipboardSync.rc @ONLY)
+    target_sources(ClipboardSync PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ClipboardSync.rc)
 endif()
 
 # Not target-wide: CTR collides with macOS SDK headers

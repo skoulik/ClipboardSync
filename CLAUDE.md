@@ -50,4 +50,4 @@ There is no test suite and no linter configured.
 
 The tray "Disable" action is a checkable menu item whose `toggled` handler just calls `confMgr.setDisabled()`; everything else reacts to `configChanged`. A tray-side `configChanged` lambda syncs the check state and icon, so the persisted state initializes the UI through the startup emission. DatagramProcessor closes its sockets and no-ops sends while disabled (see the ConfigManager bullet); ClipboardManager's clipboard handler returns early, skipping the serialize/hash work.
 
-Wire format per datagram: `[12-byte header][ciphertext][16-byte IV]`. Any change to the header, KDF parameters, or serialization format breaks interoperability with peers running older builds.
+Wire format per datagram: `[12-byte header][ciphertext][16-byte IV]`. Any change to the header, KDF parameters, or serialization format breaks interoperability with peers running older builds — and is the only thing that bumps the major number of the `project()` version, so that any two releases sharing a major number sync.
