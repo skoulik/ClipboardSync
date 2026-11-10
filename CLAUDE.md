@@ -26,6 +26,8 @@ Everything under `build/` is gitignored — never commit it. Machine-specific se
 
 `thirdparty/tiny-AES-c` is a git submodule (run `git submodule update --init` after a fresh clone). Its `aes.c` is compiled directly into the app; the cipher variant is selected by the `AES256=1 ECB=0 CTR=0` compile definitions in CMakeLists.txt.
 
+`Info.plist.in` is Qt's own macOS bundle template (`<Qt>/lib/cmake/Qt6/macos/Info.plist.app.in`) plus `LSUIElement`, which keeps the tray app out of the Dock. Re-diff it against Qt's when upgrading Qt.
+
 There is no test suite and no linter configured.
 
 ### Local toolchain notes (verified 2026-07)

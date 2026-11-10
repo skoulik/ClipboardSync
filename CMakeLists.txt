@@ -24,6 +24,7 @@ qt_add_executable(ClipboardSync
 if(APPLE)
     enable_language(OBJCXX)
     target_sources(ClipboardSync PRIVATE WakeNotifier.mm)
+    set_target_properties(ClipboardSync PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in)
 else()
     target_sources(ClipboardSync PRIVATE WakeNotifier.cpp)
 endif()
