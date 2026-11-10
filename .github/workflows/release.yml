@@ -66,6 +66,7 @@ jobs:
           Start-Process $setup -Wait -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER'
           $dir = "$env:LOCALAPPDATA\Programs\Clipboard Sync"
           if (-not (Test-Path "$dir\ClipboardSync.exe")) { throw "not installed in $dir" }
+          if (-not (Test-Path "$dir\licenses\LGPL-3.0-only.txt")) { throw "no Qt licence text in $dir" }
           $run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
           New-ItemProperty $run -Name 'Clipboard Sync' -Value "`"$dir\ClipboardSync.exe`"" -Force | Out-Null
           $app = Start-Process "$dir\ClipboardSync.exe" -PassThru
@@ -116,6 +117,7 @@ jobs:
           echo "MACOS_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
       - name: Deploy, sign, DMG
         run: |
+          ditto packaging/licenses build/ClipboardSync.app/Contents/Resources/licenses
           macdeployqt build/ClipboardSync.app -sign-for-notarization="$APP_IDENTITY"
           codesign --verify --deep --strict --verbose=2 build/ClipboardSync.app
           mkdir dmg
