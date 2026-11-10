@@ -1,7 +1,10 @@
 # Plan: packaging tier 1 — Windows and macOS installers (2026-11-10)
 
-Status: **agreed** (2026-11-10) — Sergei's four calls folded in as Q1-Q4; nothing implemented.
-Steps run in order, each reviewed before it is committed.
+Status: **implemented** (2026-11-10) — v1.0.0 published from CI, after Sergei installed both
+installers. Departures: the workflow pins aqtinstall's master on Windows (3.3.0 cannot install Qt
+6.11+ there); the macOS dev builds are signed (`CODESIGN_IDENTITY`); the DMG ships the bundle as
+`Clipboard Sync.app`; the README does not mention the restart macOS needs after the Local Network
+grant — that is a TODO.md item instead.
 
 ## Goal
 
