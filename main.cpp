@@ -12,8 +12,8 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setOrganizationName("SKSoft");
-    QCoreApplication::setOrganizationDomain("SKSoft");
+    QCoreApplication::setOrganizationName("skoulik");
+    QCoreApplication::setOrganizationDomain("skoulik");
     QCoreApplication::setApplicationName("Clipboard Sync");
 
     QApplication app(argc, argv);

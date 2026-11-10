@@ -39,7 +39,7 @@ namespace
 {
     QString plistPath()
     {
-        return QDir::homePath() + "/Library/LaunchAgents/com.sksoft.clipboardsync.plist";
+        return QDir::homePath() + "/Library/LaunchAgents/com.skoulik.clipboardsync.plist";
     }
 }
 
@@ -62,7 +62,7 @@ void AutoStart::setEnabled(bool on)
                 "<plist version=\"1.0\">\n"
                 "<dict>\n"
                 "    <key>Label</key>\n"
-                "    <string>com.sksoft.clipboardsync</string>\n"
+                "    <string>com.skoulik.clipboardsync</string>\n"
                 "    <key>ProgramArguments</key>\n"
                 "    <array>\n"
                 "        <string>%1</string>\n"

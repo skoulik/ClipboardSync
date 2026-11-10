@@ -14,7 +14,7 @@ esac
 
 powershell.exe -NoProfile -Command "
     Stop-Process -Name ClipboardSync -Force -Confirm:\$false -ErrorAction SilentlyContinue;
-    \$k = 'HKCU:\Software\SKSoft\Clipboard Sync';
+    \$k = 'HKCU:\Software\skoulik\Clipboard Sync';
     Set-ItemProperty \$k mode $mode -Type DWord;
     Set-ItemProperty \$k addr '$laddr';
     Set-ItemProperty \$k ifaceName '$LOCAL_IFACE';
@@ -23,7 +23,7 @@ powershell.exe -NoProfile -Command "
 
 ssh -i "$REMOTE_KEY" -o BatchMode=yes "$REMOTE_USER@$REMOTE_HOST" \
     "pkill -x ClipboardSync 2>/dev/null; sleep 1;
-     D='com.sksoft.Clipboard Sync';
+     D='com.skoulik.Clipboard Sync';
      defaults write \"\$D\" mode -int $mode;
      defaults write \"\$D\" addr -string $raddr;
      defaults write \"\$D\" ifaceName -string $REMOTE_IFACE;
