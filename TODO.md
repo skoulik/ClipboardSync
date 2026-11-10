@@ -17,32 +17,7 @@
 
 ## Packaging, tier 1 — Windows and macOS installers
 
-- No version exists anywhere in the project. Add `VERSION` to `project()` in CMakeLists.txt as the
-  single source of truth, and have CI fail when a `v*` tag disagrees with it, so an installer can
-  never misreport the version it claims.
-- There is no application icon — only the three 32x32 tray PNGs, which upscale badly to the 256x256
-  that an installer, an `.exe` resource and an `.icns` all want. Draw a new icon at native sizes,
-  following the tray icon's design, and derive `.ico` and `.icns` from it.
-- Add `.github/workflows/release.yml` mirroring IBKR-to-Xero's: a `v*` tag builds into a *draft*
-  release, `workflow_dispatch` is a dry run that only attaches artifacts to the run. Nothing
-  publishes automatically.
-- CI builds against the official prebuilt (dynamic) Qt via `install-qt-action`, with
-  `windeployqt`/`macdeployqt` bundling the runtime — building a static Qt per runner would cost
-  hours. CMakeLists is already agnostic to the Qt flavor, so the local static single-exe build is
-  unaffected.
-- Windows installer: Inno Setup, single component, per-user by default (no UAC prompt) with the
-  machine-wide choice offered. The uninstaller must remove the `HKCU\...\Run` value `AutoStart`
-  writes, or a stale entry survives pointing at a deleted executable.
-- Windows firewall: the app binds a listening UDP socket, so first run raises the Defender prompt —
-  easy to miss for a tray app launched at login, and Rx stays silently dead if it is dismissed. Have
-  the installer add an inbound UDP rule. It needs elevation, so it can only accompany the
-  machine-wide install choice; a per-user install still depends on the prompt.
-- macOS: a single universal DMG with drag-to-Applications. Official Qt macOS binaries are universal,
-  so one runner covers Intel and Apple Silicon; the `.pkg` + `distribution.xml` machinery used in
-  IBKR-to-Xero exists to place a CLI in `/usr/local/bin` and buys nothing for a single `.app`.
-- Ship unsigned at first and document the SmartScreen and Gatekeeper workarounds in the README —
-  certificates cost real money (~$99/yr Apple, plus a Windows OV cert). Signing and notarization are
-  a self-contained later addition (workflow secrets and a few extra steps), not a reason to delay.
+In progress: `plans/2026-11-10-packaging-tier1.md`.
 
 ## Packaging, tier 2 — Linux
 
