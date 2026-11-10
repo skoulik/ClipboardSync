@@ -68,6 +68,7 @@ jobs:
           if (-not (Test-Path "$dir\ClipboardSync.exe")) { throw "not installed in $dir" }
           if (-not (Test-Path "$dir\licenses\LGPL-3.0-only.txt")) { throw "no Qt licence text in $dir" }
           $run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+          if (-not (Test-Path $run)) { New-Item $run | Out-Null }
           New-ItemProperty $run -Name 'Clipboard Sync' -Value "`"$dir\ClipboardSync.exe`"" -Force | Out-Null
           $app = Start-Process "$dir\ClipboardSync.exe" -PassThru
           Start-Sleep 5

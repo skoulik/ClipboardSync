@@ -11,6 +11,14 @@ Built with Qt 6 (C++17).
 - UDP delivery in Broadcast, Multicast or Unicast mode
 - Payloads larger than the configured datagram size are fragmented and reassembled
 
+## Install
+
+Download the installer for your platform from the [Releases](https://github.com/skoulik/ClipboardSync/releases) page. Any two versions with the same major number (1.x) can sync with each other.
+
+**Windows** — `ClipboardSync-<version>-windows-x64.exe`. The installer is not signed, so SmartScreen may say *Windows protected your PC*: choose *More info*, then *Run anyway*. It installs for the current user without asking for administrator rights; choose *Install for all users* instead to also add a Windows Firewall rule. Without that rule, Windows asks on the first run whether to allow Clipboard Sync on your network — allow it, or nothing will be received.
+
+**macOS** — `ClipboardSync-<version>-macos.dmg`: open it and drag Clipboard Sync to Applications. The app lives in the menu bar, not the Dock. On first launch macOS asks to allow access to devices on your local network, and to paste from other apps; allow both. To uninstall, untick *Automatically start at login* in *Config…* first, then move the app to the Trash.
+
 ## Usage
 
 Run ClipboardSync on every machine that should share the clipboard, then right-click the tray icon and open *Config…*:
@@ -39,4 +47,4 @@ The AES implementation is [tiny-AES-c](https://github.com/kokke/tiny-AES-c), com
 
 ## License
 
-Public domain — see [LICENSE](LICENSE) (Unlicense). tiny-AES-c is public domain as well.
+Public domain — see [LICENSE](LICENSE) (Unlicense). tiny-AES-c is public domain as well. The installers include the [Qt](https://www.qt.io) 6.12 libraries, used under the GNU LGPL v3, whose text is installed alongside them (`licenses` in the install folder on Windows, `Contents/Resources/licenses` in the macOS app); Qt's source is at [download.qt.io](https://download.qt.io/official_releases/qt/6.12/).
