@@ -18,7 +18,7 @@ qt_add_executable(ClipboardSync
     DatagramProcessor.h  DatagramProcessor.cpp
     WakeNotifier.h
     thirdparty/tiny-AES-c/aes.c
-    resources.qrc
+    icon/resources.qrc
 )
 
 if(APPLE)
@@ -28,7 +28,7 @@ if(APPLE)
     set_target_properties(ClipboardSync PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME          "Clipboard Sync"
         MACOSX_BUNDLE_ICON_FILE            ClipboardSync.icns
-        MACOSX_BUNDLE_INFO_PLIST           ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
+        MACOSX_BUNDLE_INFO_PLIST           ${CMAKE_CURRENT_SOURCE_DIR}/packaging/Info.plist.in
         MACOSX_BUNDLE_GUI_IDENTIFIER       com.skoulik.clipboardsync
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
         MACOSX_BUNDLE_BUNDLE_VERSION       ${PROJECT_VERSION}
@@ -42,7 +42,7 @@ else()
 endif()
 
 if(WIN32)
-    configure_file(ClipboardSync.rc.in ClipboardSync.rc @ONLY)
+    configure_file(packaging/ClipboardSync.rc.in ClipboardSync.rc @ONLY)
     target_sources(ClipboardSync PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ClipboardSync.rc)
 endif()
 

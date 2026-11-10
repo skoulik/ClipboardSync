@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-ClipboardSync is a Qt Widgets system-tray app (C++17, Qt 6) that synchronizes clipboard contents between machines/user accounts over LAN via encrypted UDP. All source files live in the repository root; `CMakeLists.txt` is the source of truth for the build.
+ClipboardSync is a Qt Widgets system-tray app (C++17, Qt 6) that synchronizes clipboard contents between machines/user accounts over LAN via encrypted UDP. All C++ sources live in the repository root; `CMakeLists.txt` is the source of truth for the build.
 
 ## Build
 
@@ -26,10 +26,10 @@ Everything under `build/` is gitignored — never commit it. Machine-specific se
 
 `thirdparty/tiny-AES-c` is a git submodule (run `git submodule update --init` after a fresh clone). Its `aes.c` is compiled directly into the app; the cipher variant is selected by the `AES256=1 ECB=0 CTR=0` compile definitions in CMakeLists.txt.
 
-`Info.plist.in` is Qt's own macOS bundle template (`<Qt>/lib/cmake/Qt6/macos/Info.plist.app.in`) plus `LSUIElement`, which keeps the tray app out of the Dock. Re-diff it against Qt's when upgrading Qt.
+`packaging/Info.plist.in` is Qt's own macOS bundle template (`<Qt>/lib/cmake/Qt6/macos/Info.plist.app.in`) plus `LSUIElement`, which keeps the tray app out of the Dock. Re-diff it against Qt's when upgrading Qt.
 
 On macOS, configuring with `-DCODESIGN_IDENTITY=<identity>` signs the bundle after each build. A stable identity keeps the app's designated requirement constant across rebuilds, so macOS keeps its Local Network and Pasteboard grants instead of re-prompting (and adding a new Local Network entry) for every ad-hoc build.
-`icon/create_icon.py` (Pillow) draws every icon: `icon/ClipboardSync.ico` (Windows, via `ClipboardSync.rc.in`), `icon/ClipboardSync.icns` (macOS) and the tray PNGs in the root, with `@2x` variants that `QIcon` picks up by itself on HiDPI screens. The outputs are committed; rerun the script after changing the drawing.
+`icon/create_icon.py` (Pillow) draws every icon: `icon/ClipboardSync.ico` (Windows, via `packaging/ClipboardSync.rc.in`), `icon/ClipboardSync.icns` (macOS) and the tray PNGs beside them (compiled in through `icon/resources.qrc`), with `@2x` variants that `QIcon` picks up by itself on HiDPI screens. The outputs are committed; rerun the script after changing the drawing.
 
 There is no test suite and no linter configured.
 

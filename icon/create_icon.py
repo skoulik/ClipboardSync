@@ -130,9 +130,9 @@ def main() -> None:
     icns[-1].save(ROOT / "icon" / "ClipboardSync.icns", append_images=icns[:-1])
     for px, suffix in ((32, ""), (64, "@2x")):
         idle = clipboard(px)
-        idle.save(ROOT / f"TrayIcon{suffix}.png")
-        transmitting(idle).save(ROOT / f"TrayIconTransmitting{suffix}.png")
-        disabled(idle).save(ROOT / f"TrayIconDisabled{suffix}.png")
+        idle.save(ROOT / "icon" / f"TrayIcon{suffix}.png")
+        transmitting(idle).save(ROOT / "icon" / f"TrayIconTransmitting{suffix}.png")
+        disabled(idle).save(ROOT / "icon" / f"TrayIconDisabled{suffix}.png")
 
 
 if __name__ == "__main__":
