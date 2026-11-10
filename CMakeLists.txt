@@ -32,6 +32,10 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
         MACOSX_BUNDLE_BUNDLE_VERSION       ${PROJECT_VERSION}
     )
+    if(CODESIGN_IDENTITY)
+        add_custom_command(TARGET ClipboardSync POST_BUILD
+            COMMAND codesign --force --timestamp=none --sign ${CODESIGN_IDENTITY} $<TARGET_BUNDLE_DIR:ClipboardSync>)
+    endif()
 else()
     target_sources(ClipboardSync PRIVATE WakeNotifier.cpp)
 endif()
