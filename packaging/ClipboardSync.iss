@@ -1,8 +1,3 @@
-; Build with:
-;   iscc /DMyAppVersion=1.2.3 /DSourceDir=<deployed app folder> packaging\ClipboardSync.iss
-;
-; Written for Inno Setup 6.7 (on every GitHub Windows runner); 7 compiles it too.
-
 #ifndef MyAppVersion
   #define MyAppVersion "0.0.0"
 #endif
@@ -25,11 +20,8 @@ AppUpdatesURL={#MyAppUrl}/releases
 VersionInfoVersion={#MyAppVersion}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
-; Per-user by default, no UAC prompt; the first page offers the machine-wide install, which
-; alone can add the firewall rule.
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-; The app's autostart entry is per-user (HKCU) in either mode.
 UsedUserAreasWarning=no
 OutputDir=..\build\installer
 OutputBaseFilename=ClipboardSync-{#MyAppVersion}-windows-x64
@@ -50,8 +42,6 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Registry]
-; Written by the app's "Automatically start at login"; removed here so no entry survives
-; pointing at a deleted exe.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#MyAppName}"; Flags: dontcreatekey uninsdeletevalue
 
 [Run]

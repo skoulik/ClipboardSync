@@ -1,9 +1,5 @@
 name: Release
 
-# A `v*` tag builds both platforms and makes a DRAFT release, published by hand once the
-# installers are checked on both machines. A manual run builds without releasing.
-# Qt is the official dynamic build; the local builds use a static one, see CLAUDE.md.
-
 on:
   push:
     tags: ["v*"]
@@ -14,10 +10,8 @@ permissions:
 
 env:
   QT_VERSION: "6.12.0"
-  # Windows only: aqtinstall 3.3.0, the latest release, predates the per-compiler layout Qt's
-  # Windows repository has from 6.11 on; its master handles it. Back to a release once 3.3.1 ships.
   AQT_SOURCE: git+https://github.com/miurahr/aqtinstall.git@5a49f2b391ae8ee1d3c0dd87f8b33c1d49a4deb7
-  APP_IDENTITY: 59969450EC2C4ED8F56CB8514CCF70ED3A15E8F8  # Developer ID Application, to 2027-12-09
+  APP_IDENTITY: 59969450EC2C4ED8F56CB8514CCF70ED3A15E8F8
 
 jobs:
   version:
@@ -53,8 +47,6 @@ jobs:
           cmake -S . -B build -A x64
           cmake --build build --config Release
       - name: Deploy
-        # The MSVC runtime goes app-local: vc_redist.x64.exe needs admin, which a per-user
-        # install does not have.
         shell: pwsh
         run: |
           New-Item -ItemType Directory deploy | Out-Null
@@ -68,8 +60,6 @@ jobs:
       - name: Installer
         run: iscc /DMyAppVersion=${{ needs.version.outputs.version }} /DSourceDir=..\deploy packaging\ClipboardSync.iss
       - name: Install, run, uninstall
-        # Per-user and silent. The app is left running so the uninstaller has to stop it, and
-        # an autostart entry is planted so the uninstaller has to remove it.
         shell: pwsh
         run: |
           $setup = Get-Item build\installer\*.exe
@@ -129,7 +119,7 @@ jobs:
           macdeployqt build/ClipboardSync.app -sign-for-notarization="$APP_IDENTITY"
           codesign --verify --deep --strict --verbose=2 build/ClipboardSync.app
           mkdir dmg
-          ditto build/ClipboardSync.app dmg/ClipboardSync.app
+          ditto build/ClipboardSync.app "dmg/Clipboard Sync.app"
           ln -s /Applications dmg/Applications
           hdiutil create -volname "Clipboard Sync" -srcfolder dmg -ov -format UDZO "$DMG"
           codesign --sign "$APP_IDENTITY" --timestamp "$DMG"

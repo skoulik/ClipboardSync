@@ -1,18 +1,3 @@
-"""Draw Clipboard Sync's icons: the tray icon's clipboard and sync arrows, as vector art.
-
-Writes, relative to the repository root:
-
-    icon/ClipboardSync.ico          Windows: the bare clipboard, 16-256 px
-    icon/ClipboardSync.icns         macOS: the clipboard on a navy tile, Apple's 824-in-1024 grid
-    TrayIcon[@2x].png               the tray states at 32 and 64 px: idle, transmitting
-    TrayIconTransmitting[@2x].png   (green and blue boosted, as the original tray art was)
-    TrayIconDisabled[@2x].png       and disabled (darkened greyscale)
-
-The outputs are committed, so a build needs neither this script nor Pillow:
-
-    python icon/create_icon.py
-"""
-
 from __future__ import annotations
 
 import math
@@ -47,7 +32,6 @@ def _vgradient(size, box, top, bottom):
 
 
 def _arrow(d, c, r, start, end, width, color):
-    """A clockwise arc from `start` to `end` degrees with an arrowhead at `end`."""
     head_len = width * 1.25
     end_arc = end - math.degrees(head_len * 0.55 / r)
     cx, cy = c
@@ -64,7 +48,6 @@ def _arrow(d, c, r, start, end, width, color):
 
 
 def clipboard(px: int, box=(0.0, 0.0, 1.0, 1.0)) -> Image.Image:
-    """The clipboard, drawn into `box` (fractions of a `px`-square canvas)."""
     S = px * SS
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     bx0, by0, bx1, by1 = (v * S for v in box)
@@ -116,7 +99,6 @@ def clipboard(px: int, box=(0.0, 0.0, 1.0, 1.0)) -> Image.Image:
 
 
 def tile(px: int) -> Image.Image:
-    """The clipboard on a navy rounded tile, on Apple's 824-in-1024 grid."""
     S = px * SS
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     m = S * 100 / 1024
@@ -132,8 +114,8 @@ def tile(px: int) -> Image.Image:
 
 def transmitting(img: Image.Image) -> Image.Image:
     r, g, b, a = img.split()
-    boost = lambda v: min(255, round(v * 1.25))  # noqa: E731
-    return Image.merge("RGBA", (r, g.point(boost), b.point(boost), a))
+    g, b = (c.point(lambda v: min(255, round(v * 1.25))) for c in (g, b))
+    return Image.merge("RGBA", (r, g, b, a))
 
 
 def disabled(img: Image.Image) -> Image.Image:

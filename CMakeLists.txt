@@ -26,6 +26,7 @@ if(APPLE)
     target_sources(ClipboardSync PRIVATE WakeNotifier.mm icon/ClipboardSync.icns)
     set_source_files_properties(icon/ClipboardSync.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     set_target_properties(ClipboardSync PROPERTIES
+        MACOSX_BUNDLE_BUNDLE_NAME          "Clipboard Sync"
         MACOSX_BUNDLE_ICON_FILE            ClipboardSync.icns
         MACOSX_BUNDLE_INFO_PLIST           ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
         MACOSX_BUNDLE_GUI_IDENTIFIER       com.skoulik.clipboardsync

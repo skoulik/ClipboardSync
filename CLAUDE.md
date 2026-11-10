@@ -40,6 +40,14 @@ There is no test suite and no linter configured.
 - Qt 6.12 **static** build at `%QT2026%\amd64` (env var `QT2026`), configured with `static` + `static_runtime`; `debug_and_release` libs are present. Set `CMAKE_PREFIX_PATH=%QT2026%\amd64` before configuring. CMakeLists.txt is agnostic to the Qt build's CRT flavor: `qt_add_executable` itself applies `/MT` to the target when (and only when) the Qt install reports `static_runtime`.
 - The Qt libs were compiled with clang-cl (mkspec `win32-clang-msvc`) and reference `clang_rt.builtins-x86_64.lib`; CMakeLists.txt locates it in the VS-bundled Clang toolchain via `VCToolsInstallDir` (a no-op for cl-built Qt), so the app itself builds with plain MSVC `cl`.
 
+## Packaging
+
+`.github/workflows/release.yml`: a `v*` tag builds both platforms into a **draft** release, published by hand once the installers are checked on both machines; a manual run only attaches the installers to the run. A tag that disagrees with `project()`'s version fails the run.
+
+- CI uses the official dynamic Qt via `install-qt-action`. On Windows it installs aqtinstall's master pinned by commit: the 3.3.0 release predates the per-compiler layout of Qt's Windows repository from 6.11 on — return to a release once 3.3.1 ships. CMake picks the runner's Visual Studio, whose version the image changes.
+- Windows: `windeployqt`, the MSVC runtime DLLs copied app-local (`vc_redist.x64.exe` needs admin, which a per-user install lacks), then `packaging/ClipboardSync.iss` — written for the runners' Inno Setup 6.7, and 7 compiles it too. The installer is per-user by default; the machine-wide choice alone can add the inbound UDP firewall rule (removed on uninstall). The uninstaller stops the app and removes its `Run` value. CI smoke-tests this: a silent per-user install, the app left running and an autostart entry planted, then a silent uninstall that must remove both.
+- macOS: one universal build, signed by `macdeployqt -sign-for-notarization` with the Developer ID Application identity (by SHA-1; it expires 2027-12-09), put in a signed DMG, notarised through an App Store Connect API key and stapled. The secrets are `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`. The DMG names the bundle `Clipboard Sync.app`, while builds produce `ClipboardSync.app`: a bundle's folder name is outside its signature.
+
 ## Architecture
 
 `main.cpp` constructs the event-driven components below and wires them together with Qt signals — the only other coupling is the `const ConfigManager&` that DatagramProcessor and ClipboardManager hold for reading the config; the static-only helpers (CryptoEngine, AutoStart) are called directly where needed:
