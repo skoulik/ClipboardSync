@@ -11,9 +11,6 @@
   mattered when sent datagrams were immediately fed back to the same host, which
   `MulticastLoopbackOption = 0` avoids). Investigate whether Rx starvation can still occur in the
   other modes and document; the proper long-term answer is async send.
-- WakeNotifier performs a single rejoin 5 s after wake; if the network takes longer to come up
-  (VPN, slow Wi-Fi association) the rejoin misses and sync stays broken until the next wake or
-  config change. Consider a bounded retry.
 - macOS: after the Local Network prompt is granted, sending works at once but inbound datagrams
   are dropped for the running process until it is restarted — measured 2026-11-10 with
   `netstat -anv -p udp`: the app's Rx socket counted 0 bytes while a listener on the same port
@@ -40,8 +37,9 @@ Ordered deliberately: the first item decides whether the rest is worth doing.
   Establish what has to be required of the user.
 - `AutoStart` is an empty stub on Linux. Add a branch writing
   `~/.config/autostart/clipboardsync.desktop`, mirroring the macOS LaunchAgent branch.
-- `WakeNotifier` is an empty stub on Linux. Add a branch listening for logind's `PrepareForSleep`
-  signal on `org.freedesktop.login1`, which pulls in `Qt6::DBus` as a new dependency.
+- `NetworkNotifier` is an empty stub on Linux. Add a branch listening for logind's
+  `PrepareForSleep` signal on `org.freedesktop.login1`, which pulls in `Qt6::DBus` as a new
+  dependency, and for `RTM_NEWADDR` on a netlink socket.
 - Linux installer: AppImage via `linuxdeploy` and its Qt plugin — one file, no root, no package
   manager, matching the download-and-run shape of the other two. Build on the oldest distro to be
   supported, since glibc sets the floor. Distro `.deb`/`.rpm` rejected: they link the distro's own

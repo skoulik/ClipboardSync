@@ -31,7 +31,7 @@ Run from Git Bash on the Windows machine:
 - `remote-build.sh` — configure + build the Release app on the Mac's repo clone.
 - `remote-restart.sh` — relaunch the app in the Mac's GUI session and show its sockets.
 
-Sleep/wake regression check (the scenario WakeNotifier fixes): put the Mac to sleep with
+Sleep/wake regression check (the scenario NetworkNotifier fixes): put the Mac to sleep with
 `pmset sleepnow` over SSH, wake it manually after ~10 minutes, then run `sync-test.sh`.
 
 The protocol sends each clipboard change as one datagram burst with no retransmit, so a single

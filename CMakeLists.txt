@@ -16,14 +16,15 @@ qt_add_executable(ClipboardSync
     ConfigManager.h      ConfigManager.cpp
     CryptoEngine.h       CryptoEngine.cpp
     DatagramProcessor.h  DatagramProcessor.cpp
-    WakeNotifier.h
+    NetworkNotifier.h
     thirdparty/tiny-AES-c/aes.c
     icon/resources.qrc
 )
 
 if(APPLE)
     enable_language(OBJCXX)
-    target_sources(ClipboardSync PRIVATE WakeNotifier.mm icon/ClipboardSync.icns)
+    target_sources(ClipboardSync PRIVATE NetworkNotifier.mm icon/ClipboardSync.icns)
+    target_link_libraries(ClipboardSync PRIVATE "-framework SystemConfiguration")
     set_source_files_properties(icon/ClipboardSync.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     set_target_properties(ClipboardSync PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME          "Clipboard Sync"
@@ -38,12 +39,13 @@ if(APPLE)
             COMMAND codesign --force --timestamp=none --sign ${CODESIGN_IDENTITY} $<TARGET_BUNDLE_DIR:ClipboardSync>)
     endif()
 else()
-    target_sources(ClipboardSync PRIVATE WakeNotifier.cpp)
+    target_sources(ClipboardSync PRIVATE NetworkNotifier.cpp)
 endif()
 
 if(WIN32)
     configure_file(packaging/ClipboardSync.rc.in ClipboardSync.rc @ONLY)
     target_sources(ClipboardSync PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ClipboardSync.rc)
+    target_link_libraries(ClipboardSync PRIVATE iphlpapi)
 endif()
 
 # Not target-wide: CTR collides with macOS SDK headers

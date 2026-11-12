@@ -2,7 +2,7 @@
 #include "ConfigDialog.h"
 #include "ConfigManager.h"
 #include "DatagramProcessor.h"
-#include "WakeNotifier.h"
+#include "NetworkNotifier.h"
 #include <QApplication>
 #include <QSystemTrayIcon>
 #include <QMenu>
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     ConfigManager confMgr;
     DatagramProcessor dgProc(confMgr);
     ClipboardManager clbMgr(confMgr);
-    WakeNotifier wakeNotifier;
+    NetworkNotifier netNotifier(confMgr);
 
     enum { icnIdle = 0, icnTransmitting, icnDisabled };
     QIcon icons[] = {QIcon(":/TrayIcon.png"), QIcon(":/TrayIconTransmitting.png"), QIcon(":/TrayIconDisabled.png")};
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 
     QObject::connect(&clbMgr, &ClipboardManager::dataChanged, &dgProc, &DatagramProcessor::sendDatagram);
     QObject::connect(&dgProc, &DatagramProcessor::datagramReceived, &clbMgr, &ClipboardManager::setData);
-    QObject::connect(&wakeNotifier, &WakeNotifier::systemWoke, &confMgr, &ConfigManager::configChanged);
+    QObject::connect(&netNotifier, &NetworkNotifier::networkChanged, &confMgr, &ConfigManager::configChanged);
 
     emit confMgr.configChanged();
     return app.exec();
