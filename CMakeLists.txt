@@ -24,7 +24,7 @@ qt_add_executable(ClipboardSync
 if(APPLE)
     enable_language(OBJCXX)
     target_sources(ClipboardSync PRIVATE NetworkNotifier.mm icon/ClipboardSync.icns)
-    target_link_libraries(ClipboardSync PRIVATE "-framework SystemConfiguration")
+    target_link_libraries(ClipboardSync PRIVATE "-framework Network" "-framework SystemConfiguration")
     set_source_files_properties(icon/ClipboardSync.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     set_target_properties(ClipboardSync PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME          "Clipboard Sync"

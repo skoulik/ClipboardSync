@@ -11,13 +11,6 @@
   mattered when sent datagrams were immediately fed back to the same host, which
   `MulticastLoopbackOption = 0` avoids). Investigate whether Rx starvation can still occur in the
   other modes and document; the proper long-term answer is async send.
-- macOS: after the Local Network prompt is granted, sending works at once but inbound datagrams
-  are dropped for the running process until it is restarted — measured 2026-11-10 with
-  `netstat -anv -p udp`: the app's Rx socket counted 0 bytes while a listener on the same port
-  and group received the same datagrams, and a restart fixed it. Every first launch hits this,
-  and the README no longer tells users to restart. Investigate whether re-creating the sockets
-  in-process (as the Disable toggle does) is enough or only a new process is, and find a
-  workaround the app can apply itself.
 
 ## Packaging, tier 1 — Windows and macOS installers
 
