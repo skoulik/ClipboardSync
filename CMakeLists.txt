@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
+# Before project(): the macOS floor is Qt 6.12's, 14.4 (below it Qt crashes at the first
+# contended mutex). Unset, the build takes the build machine's macOS - CI's macOS 26 - and
+# Info.plist's LSMinimumSystemVersion comes out empty.
+set(CMAKE_OSX_DEPLOYMENT_TARGET "14.4" CACHE STRING "Minimum macOS version")
 project(ClipboardSync VERSION 1.0.2 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)

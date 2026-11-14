@@ -17,7 +17,7 @@ Download the installer for your platform from the [Releases](https://github.com/
 
 **Windows** — `ClipboardSync-<version>-windows-x64.exe`. The installer is not signed, so SmartScreen may say *Windows protected your PC*: choose *More info*, then *Run anyway*. It installs for the current user without asking for administrator rights; choose *Install for all users* instead to also add a Windows Firewall rule. Without that rule, Windows asks on the first run whether to allow Clipboard Sync on your network — allow it, or nothing will be received.
 
-**macOS** — `ClipboardSync-<version>-macos.dmg`: open it and drag Clipboard Sync to Applications. The app lives in the menu bar, not the Dock. On first launch macOS asks to allow access to devices on your local network, and to paste from other apps; allow both. To uninstall, untick *Automatically start at login* in *Config…* first, then move the app to the Trash.
+**macOS** (14.4 or later) — `ClipboardSync-<version>-macos.dmg`: open it and drag Clipboard Sync to Applications. The app lives in the menu bar, not the Dock. On first launch macOS asks to allow access to devices on your local network, and to paste from other apps; allow both. To uninstall, untick *Automatically start at login* in *Config…* first, then move the app to the Trash.
 
 ## Usage
 
